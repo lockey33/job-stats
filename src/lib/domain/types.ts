@@ -33,6 +33,7 @@ export interface JobFilters {
   q?: string; // free-text search
   skills?: string[]; // contains any
   excludeSkills?: string[]; // exclude any
+  excludeTitle?: string[]; // exclude if title contains any of these keywords (case-insensitive)
   cities?: string[]; // exact match (case-insensitive)
   cityMatch?: 'contains' | 'exact';
   excludeCities?: boolean; // when true, exclude items matching selected cities

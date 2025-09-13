@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { JobFilters, MetaFacets } from '@/lib/domain/types';
 import CityMultiSelect from '@/components/CityMultiSelect';
 import SkillMultiSelect from '@/components/SkillMultiSelect';
+import ChipsInput from '@/components/ChipsInput';
+import DatePicker from 'react-datepicker';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export interface FilterPanelProps {
   meta: MetaFacets | null;
@@ -38,6 +42,20 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
 
   const update = (patch: Partial<JobFilters>) => onChange({ ...value, ...patch });
 
+  // Helpers to convert between YYYY-MM-DD and Date for the datepicker
+  function ymdToDate(ymd?: string): Date | null {
+    if (!ymd) return null;
+    const parts = ymd.split('-').map((n) => Number(n));
+    if (parts.length !== 3) return null;
+    const [y, m, d] = parts;
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  }
+
+  function dateToYmd(d: Date | null | undefined): string | undefined {
+    return d ? format(d, 'yyyy-MM-dd') : undefined;
+  }
+
   return (
     <div className="rounded-lg border border-gray-200 dark:border-zinc-800 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -57,6 +75,15 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           value={value.excludeSkills ?? []}
           onChange={(excludeSkills) => update({ excludeSkills })}
           placeholder="Tapez pour exclure des skills…"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Mots-clés à exclure (dans le titre)</label>
+        <ChipsInput
+          value={value.excludeTitle ?? []}
+          onChange={(excludeTitle) => update({ excludeTitle })}
+          placeholder="ex: alternance, stage, junior"
         />
       </div>
 
@@ -191,20 +218,36 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
 
       <div className="space-y-2">
         <label className="block text-sm font-medium">Date de début</label>
-        <input
-          type="date"
-          value={value.startDate ?? ''}
-          onChange={(e) => update({ startDate: e.target.value || undefined })}
+        <DatePicker
+          selected={ymdToDate(value.startDate)}
+          onChange={(d: Date | null) => update({ startDate: dateToYmd(d) })}
+          dateFormat="yyyy-MM-dd"
+          placeholderText="Choisir une date"
+          isClearable
+          maxDate={ymdToDate(value.endDate) ?? undefined}
+          selectsStart
+          startDate={ymdToDate(value.startDate) ?? undefined}
+          endDate={ymdToDate(value.endDate) ?? undefined}
+          todayButton="Aujourd’hui"
+          locale={fr}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
         />
       </div>
 
       <div className="space-y-2">
         <label className="block text-sm font-medium">Date de fin</label>
-        <input
-          type="date"
-          value={value.endDate ?? ''}
-          onChange={(e) => update({ endDate: e.target.value || undefined })}
+        <DatePicker
+          selected={ymdToDate(value.endDate)}
+          onChange={(d: Date | null) => update({ endDate: dateToYmd(d) })}
+          dateFormat="yyyy-MM-dd"
+          placeholderText="Choisir une date"
+          isClearable
+          minDate={ymdToDate(value.startDate) ?? undefined}
+          selectsEnd
+          startDate={ymdToDate(value.startDate) ?? undefined}
+          endDate={ymdToDate(value.endDate) ?? undefined}
+          todayButton="Aujourd’hui"
+          locale={fr}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
         />
       </div>

@@ -66,6 +66,7 @@ export function applyFilters(jobs: JobItem[], filters: JobFilters): JobItem[] {
   const q = norm(filters.q);
   const skills = (filters.skills ?? []).map((s) => norm(s));
   const excludeSkills = (filters.excludeSkills ?? []).map((s) => norm(s));
+  const excludeTitle = (filters.excludeTitle ?? []).map((s) => norm(s));
   const cities = (filters.cities ?? []).map((s) => normCity(s));
   const regions = (filters.regions ?? []).map((s) => norm(s));
   const remote = (filters.remote ?? []).map((s) => norm(s));
@@ -76,16 +77,22 @@ export function applyFilters(jobs: JobItem[], filters: JobFilters): JobItem[] {
     // text search
     if (q && !itemText(j).includes(q)) return false;
 
-    // skills (any match)
+    // skills (AND match: must include all selected skills)
     if (skills.length > 0) {
-      const js = (j.skills ?? []).map(norm);
-      if (!skills.some((s) => js.includes(s))) return false;
+      const jsSet = new Set((j.skills ?? []).map(norm));
+      if (!skills.every((s) => jsSet.has(s))) return false;
     }
 
     // exclude skills (any match)
     if (excludeSkills.length > 0) {
       const js = (j.skills ?? []).map(norm);
       if (excludeSkills.some((s) => js.includes(s))) return false;
+    }
+
+    // exclude title keywords (any substring match)
+    if (excludeTitle.length > 0) {
+      const t = norm(j.title);
+      if (excludeTitle.some((w) => w && t.includes(w))) return false;
     }
 
     // cities (exact or contains, tolerant to parentheses)

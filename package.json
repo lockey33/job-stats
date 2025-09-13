@@ -6,14 +6,19 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "update:data": "node scripts/update-data.mjs",
+    "update:data:dry": "node scripts/update-data.mjs --dry-run",
+    "update:data:oldest": "node scripts/update-data.mjs --pivot=oldest"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
     "next": "15.5.2",
     "react": "19.1.0",
+    "react-datepicker": "^8.7.0",
     "react-dom": "19.1.0",
     "recharts": "^3.2.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.5"
   },
   "devDependencies": {

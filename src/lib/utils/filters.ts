@@ -5,6 +5,7 @@ export const filtersSchema = z.object({
   q: z.string().optional(),
   skills: z.array(z.string()).optional(),
   excludeSkills: z.array(z.string()).optional(),
+  excludeTitle: z.array(z.string()).optional(),
   cities: z.array(z.string()).optional(),
   cityMatch: z.enum(['contains', 'exact']).default('contains').optional(),
   excludeCities: z.coerce.boolean().default(false).optional(),
@@ -30,6 +31,7 @@ export function parseFiltersFromSearchParams(params: URLSearchParams): JobFilter
     q: params.get('q') ?? undefined,
     skills: getArray('skills'),
     excludeSkills: getArray('excludeSkills'),
+    excludeTitle: getArray('excludeTitle'),
     cities: getArray('cities'),
     cityMatch: (params.get('cityMatch') as 'contains' | 'exact' | null) ?? undefined,
     excludeCities: params.get('excludeCities') ?? undefined,
@@ -61,6 +63,7 @@ export function toQueryString(filters: Partial<JobFilters & { page: number; page
   if (filters.q) params.set('q', filters.q);
   addArray('skills', filters.skills as string[] | undefined);
   addArray('excludeSkills', filters.excludeSkills as string[] | undefined);
+  addArray('excludeTitle', filters.excludeTitle as string[] | undefined);
   addArray('cities', filters.cities as string[] | undefined);
   if (filters.cityMatch) params.set('cityMatch', filters.cityMatch);
   if (typeof (filters as any).excludeCities !== 'undefined') params.set('excludeCities', String((filters as any).excludeCities));
