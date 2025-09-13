@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Input, Tag } from "@chakra-ui/react";
+import { Box, Input } from "@chakra-ui/react";
+import CloseableTag from "@/components/atoms/CloseableTag/CloseableTag";
 
 function norm(s: string): string {
   return s.toLowerCase().trim().replace(/\s+/g, " ");
@@ -63,10 +64,7 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
       {value.length > 0 && (
         <Box display="flex" flexWrap="wrap" gap="sm" mb="sm">
           {value.map((s) => (
-            <Tag.Root key={s} size="sm">
-              <Tag.Label>{s}</Tag.Label>
-              <Tag.CloseTrigger onClick={() => removeChip(s)} aria-label={`Retirer ${s}`} />
-            </Tag.Root>
+            <CloseableTag key={s} onClose={() => removeChip(s)}>{s}</CloseableTag>
           ))}
         </Box>
       )}
@@ -81,3 +79,4 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
     </Box>
   );
 }
+

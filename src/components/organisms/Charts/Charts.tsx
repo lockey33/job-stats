@@ -89,3 +89,4 @@ export default function Charts({ data }: Props) {
     </Box>
   );
 }
+

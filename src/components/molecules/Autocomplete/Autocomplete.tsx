@@ -2,25 +2,30 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Input, Button } from "@chakra-ui/react";
+import SuggestionsList from "@/components/atoms/SuggestionsList/SuggestionsList";
 
-function norm(s: string) { return s.toLowerCase().trim(); }
+type Normalizer = (s: string) => string;
+
+const defaultNormalize: Normalizer = (s) => s.toLowerCase().trim();
 
 interface Props {
   options: string[];
   value: string;
   onChange: (next: string) => void;
   placeholder?: string;
+  normalize?: Normalizer;
+  clearable?: boolean;
 }
 
-export default function SkillAutocomplete({ options, value, onChange, placeholder = "Choisir un skill…" }: Props) {
+export default function Autocomplete({ options, value, onChange, placeholder = "Choisir…", normalize = defaultNormalize, clearable = true }: Props) {
   const [input, setInput] = useState<string>(value || "");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => setInput(value || ""), [value]);
 
-  const opts = useMemo(() => options.map((o) => ({ raw: o, norm: norm(o) })), [options]);
-  const inputNorm = norm(input);
+  const opts = useMemo(() => options.map((o) => ({ raw: o, norm: normalize(o) })), [options, normalize]);
+  const inputNorm = normalize(input);
 
   const suggestions = useMemo(() => {
     if (!inputNorm) return opts.slice(0, 12).map((o) => o.raw);
@@ -57,21 +62,16 @@ export default function SkillAutocomplete({ options, value, onChange, placeholde
           placeholder={placeholder}
           size="sm"
         />
-        {value && (
+        {clearable && value && (
           <Button type="button" size="sm" variant="outline" onClick={clear}>
             Effacer
           </Button>
         )}
       </Box>
       {open && suggestions.length > 0 && (
-        <Box mt={1} maxH="14rem" overflowY="auto" rounded="md" borderWidth="1px" bg="white" shadow="sm">
-          {suggestions.map((s) => (
-            <Box key={s} as="button" w="full" textAlign="left" px={3} py={2} fontSize="sm" _hover={{ bg: "gray.50" }} onClick={() => pick(s)}>
-              {s}
-            </Box>
-          ))}
-        </Box>
+        <SuggestionsList items={suggestions} onSelect={pick} />
       )}
     </Box>
   );
 }
+

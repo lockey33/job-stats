@@ -33,3 +33,4 @@ export default function SearchBar({ value = '', onChange, placeholder = 'Recherc
     </Box>
   );
 }
+

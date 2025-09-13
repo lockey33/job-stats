@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { JobFilters, MetaFacets } from '@/lib/domain/types';
-import CityMultiSelect from '@/components/CityMultiSelect';
-import SkillMultiSelect from '@/components/SkillMultiSelect';
-import ChipsInput from '@/components/ChipsInput';
+import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect';
+import ChipsInput from '@/components/molecules/ChipsInput/ChipsInput';
 import DatePicker from 'react-datepicker';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Box, Text, Input, HStack, Checkbox, Grid } from '@chakra-ui/react';
-import ChakraDateInput from '@/components/ChakraDateInput';
+import { Box, Text, Input, HStack, Checkbox, Grid, Button } from '@chakra-ui/react';
+import ChakraDateInput from '@/components/atoms/ChakraDateInput/ChakraDateInput';
 
 export interface FilterPanelProps {
   meta: MetaFacets | null;
@@ -29,6 +28,7 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
   
   const [citiesText, setCitiesText] = useState<string>((value.cities ?? []).join(', '));
   const [jobSlugsText, setJobSlugsText] = useState<string>((value.job_slugs ?? []).join(', '));
+  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setSkillsText((value.skills ?? []).join(', '));
@@ -59,25 +59,47 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
   }
 
   return (
-    <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none">
-      <Grid gap="md" templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }}>
+    <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none" role="region" aria-labelledby="filters-heading">
+      <HStack justify="space-between" align="center" mb="sm">
+        <HStack gap="xs">
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            aria-expanded={advancedOpen}
+            aria-controls="advanced-filters"
+          >
+            {advancedOpen ? 'Masquer avancés' : 'Afficher avancés'}
+          </Button>
+          <Button size="xs" variant="outline" colorPalette="gray" onClick={() => onChange({})} aria-label="Réinitialiser tous les filtres">
+            Réinitialiser
+          </Button>
+        </HStack>
+      </HStack>
+      <Grid id="filter-panel-content" gap="md" templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }}>
+        {/* Section: Compétences */}
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }}>
+          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Compétences</Text>
+        </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
           <Text fontSize="sm" fontWeight="medium">Skills</Text>
-          <SkillMultiSelect
+          <MultiSelect
             options={meta?.skills ?? []}
             value={value.skills ?? []}
             onChange={(skills) => update({ skills })}
             placeholder="Ajouter des skills…"
+            dedupeByNormalized
           />
         </Box>
 
         <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
           <Text fontSize="sm" fontWeight="medium">Skills à exclure</Text>
-          <SkillMultiSelect
+          <MultiSelect
             options={meta?.skills ?? []}
             value={value.excludeSkills ?? []}
             onChange={(excludeSkills) => update({ excludeSkills })}
             placeholder="Tapez pour exclure des skills…"
+            dedupeByNormalized
           />
         </Box>
 
@@ -90,13 +112,19 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           />
         </Box>
 
+        {/* Section: Localisation */}
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
+          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Localisation</Text>
+        </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium">Villes</Text>
-          <CityMultiSelect
+          <MultiSelect
             options={cityOptions}
             value={value.cities ?? []}
             onChange={(cities) => update({ cities })}
             placeholder="Tapez pour rechercher une ville..."
+            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
+            dedupeByNormalized={false}
           />
           <HStack pt="xs" gap="sm" align="center">
             <Checkbox.Root
@@ -128,11 +156,13 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
 
         <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium">Régions</Text>
-          <CityMultiSelect
+          <MultiSelect
             options={regionOptions}
             value={value.regions ?? []}
             onChange={(regions) => update({ regions })}
             placeholder="Tapez pour rechercher une région..."
+            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
+            dedupeByNormalized={false}
           />
           <HStack pt="xs" gap="md" align="center">
             <Checkbox.Root
@@ -150,18 +180,25 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           </HStack>
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }}>
-          <Text fontSize="sm" fontWeight="medium">Job slugs (séparés par des virgules)</Text>
-          <Input
-            type="text"
-            value={jobSlugsText}
-            onChange={(e) => setJobSlugsText(e.target.value)}
-            onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
-            placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
-            size="sm"
-          />
-        </Box>
+        {advancedOpen && (
+          <Box id="advanced-filters" gridColumn={{ base: '1/-1', md: 'span 12' }}>
+            <Text fontSize="sm" fontWeight="medium">Job slugs (séparés par des virgules)</Text>
+            <Input
+              type="text"
+              value={jobSlugsText}
+              onChange={(e) => setJobSlugsText(e.target.value)}
+              onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
+              placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
+              size="sm"
+              aria-label="Job slugs, séparés par des virgules"
+            />
+          </Box>
+        )}
 
+        {/* Section: Caractéristiques */}
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
+          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Caractéristiques</Text>
+        </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium">Télétravail</Text>
           <HStack gap="sm" wrap="wrap">
@@ -210,6 +247,10 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           </HStack>
         </Box>
 
+        {/* Section: Finances */}
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
+          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Finances</Text>
+        </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
           <Text fontSize="sm" fontWeight="medium">TJM min</Text>
           <Input
@@ -217,6 +258,7 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             value={value.minTjm ?? ''}
             onChange={(e) => update({ minTjm: e.target.value ? Number(e.target.value) : undefined })}
             size="sm"
+            aria-label="TJM minimum"
           />
         </Box>
 
@@ -227,9 +269,14 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             value={value.maxTjm ?? ''}
             onChange={(e) => update({ maxTjm: e.target.value ? Number(e.target.value) : undefined })}
             size="sm"
+            aria-label="TJM maximum"
           />
         </Box>
 
+        {/* Section: Période */}
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
+          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Période</Text>
+        </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
           <Text fontSize="sm" fontWeight="medium">Date de début</Text>
           <DatePicker

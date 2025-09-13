@@ -3,6 +3,14 @@ import { createSystem, defaultConfig } from "@chakra-ui/react";
 // Light-only Design System tokens
 export const system = createSystem(defaultConfig, {
   theme: {
+    semanticTokens: {
+      colors: {
+        surface: { value: '{colors.white}' },
+        surfaceMuted: { value: '{colors.neutral.50}' },
+        border: { value: '{colors.neutral.200}' },
+        textMuted: { value: '{colors.neutral.600}' },
+      },
+    },
     tokens: {
       colors: {
         brand: {

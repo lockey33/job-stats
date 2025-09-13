@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { JobFilters, MetaFacets } from "@/lib/domain/types";
 import { fetchCitySkillTrend } from "@/lib/utils/api";
-import SkillAutocomplete from "@/components/SkillAutocomplete";
-import CityMultiSelect from "@/components/CityMultiSelect";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import Autocomplete from "@/components/molecules/Autocomplete/Autocomplete";
+import MultiSelect from "@/components/molecules/MultiSelect/MultiSelect";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, Legend } from "recharts";
 import { Box, Text, Input, Checkbox, Alert } from "@chakra-ui/react";
 
 const COLORS = [
@@ -29,6 +29,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
   const [months, setMonths] = useState<string[]>([]);
   const [seriesSkills, setSeriesCities] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [hiddenCities, setHiddenCities] = useState<string[]>([]);
 
   // Auto-fill default skill once when analytics suggested one
   useEffect(() => {
@@ -78,12 +79,97 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
 
   const cityOptions = useMemo(() => meta?.cities ?? [], [meta]);
 
+  const colorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    seriesSkills.forEach((city, idx) => {
+      map[city] = COLORS[idx % COLORS.length];
+    });
+    return map;
+  }, [seriesSkills]);
+
+  function toggleCityVisibility(city: string) {
+    setHiddenCities((prev) => (prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]));
+  }
+
+  function CustomLegend({ payload }: any) {
+    if (!payload) return null;
+    return (
+      <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
+        {seriesSkills.map((city) => {
+          const color = colorMap[city];
+          const hidden = hiddenCities.includes(city);
+          return (
+            <Box
+              as="button"
+              key={city}
+              display="inline-flex"
+              alignItems="center"
+              gap="xs"
+              px="xs"
+              py="1"
+              rounded="md"
+              borderWidth="1px"
+              opacity={hidden ? 0.4 : 1}
+              onClick={() => toggleCityVisibility(city)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleCityVisibility(city);
+                }
+              }}
+              role="switch"
+              aria-checked={!hidden}
+              title={`${hidden ? 'Afficher' : 'Masquer'} ${city}`}
+            >
+              <Box w="10px" h="10px" rounded="full" bg={color} />
+              <Text fontSize="sm">{city}</Text>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  }
+
+  function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload || payload.length === 0) return null;
+    const prevIdx = months.findIndex((m) => m === label) - 1;
+    const prevMonth = prevIdx >= 0 ? months[prevIdx] : null;
+    const prev = prevMonth ? chartData.find((d) => String(d.month) === String(prevMonth)) : null;
+    return (
+      <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
+        <Text fontWeight="semibold" mb="xs">{label}</Text>
+        {payload.map((entry: any, idx: number) => {
+          const city = entry.name;
+          const val = entry.value as number;
+          const prevVal = prev ? (prev[city] ?? null) : null;
+          const delta = typeof prevVal === 'number' ? val - prevVal : null;
+          return (
+            <Box key={`${city}-${idx}`} display="flex" alignItems="center" justifyContent="space-between" gap="md">
+              <Box display="inline-flex" alignItems="center" gap="xs">
+                <Box w="10px" h="10px" bg={entry.color} rounded="full" />
+                <Text>{city}</Text>
+              </Box>
+              <Box>
+                <Text as="span" fontWeight="medium">{val}</Text>
+                {delta !== null && (
+                  <Text as="span" color={delta >= 0 ? 'green.600' : 'red.600'} ml="2">
+                    {delta >= 0 ? `+${delta}` : `${delta}`}
+                  </Text>
+                )}
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  }
+
   return (
     <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none" display="flex" flexDirection="column" gap="md">
       <Box display="flex" flexDirection={{ base: 'column', md: 'row' }} gap="md" alignItems={{ md: 'flex-end' }}>
         <Box flex={{ base: 'unset', md: 1 }} w="full">
           <Text fontSize="sm" fontWeight="medium" mb="xs">Skill</Text>
-          <SkillAutocomplete
+          <Autocomplete
             options={meta?.skills ?? []}
             value={skill}
             onChange={setSkill}
@@ -92,11 +178,13 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
         </Box>
         <Box flex={{ base: 'unset', md: 1 }} w="full">
           <Text fontSize="sm" fontWeight="medium" mb="xs">Villes (facultatif)</Text>
-          <CityMultiSelect
+          <MultiSelect
             options={cityOptions}
             value={selectedCities}
             onChange={setSelectedCities}
             placeholder="Ajouter des villes précises (sinon Top N villes)"
+            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
+            dedupeByNormalized={false}
           />
           <Box display="flex" alignItems="center" gap="md" mt="sm" fontSize="xs">
             <Checkbox.Root checked={useSelectedCities} onCheckedChange={(d: any) => setUseSelectedCities(!!d.checked)}>
@@ -104,17 +192,17 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
               <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
               <Checkbox.Label>Utiliser uniquement ces villes</Checkbox.Label>
             </Checkbox.Root>
-            <Box display="inline-flex" alignItems="center" gap="sm">
+            <Box display="flex" alignItems="center" gap="sm" minW={{ md: '20rem' }}>
               <Text>Top N villes:</Text>
               <Input
-                type="number"
+                type="range"
                 min={1}
                 max={12}
                 value={topCityCount}
                 onChange={(e) => setTopCityCount(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
-                size="sm"
-                w="4rem"
+                w="full"
               />
+              <Box as="span" fontWeight="medium" minW="2rem" textAlign="right">{topCityCount}</Box>
             </Box>
           </Box>
         </Box>
@@ -140,10 +228,10 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                {seriesSkills.map((city, idx) => (
-                  <Line key={city} type="monotone" dataKey={city} stroke={COLORS[idx % COLORS.length]} strokeWidth={2} dot={false} />
+                <ReTooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
+                {seriesSkills.filter((c) => !hiddenCities.includes(c)).map((city) => (
+                  <Line key={city} type="monotone" dataKey={city} stroke={colorMap[city]} strokeWidth={2} dot={false} />
                 ))}
               </LineChart>
             </ResponsiveContainer>

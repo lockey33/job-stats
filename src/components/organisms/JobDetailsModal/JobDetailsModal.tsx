@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { JobItem } from "@/lib/domain/types";
 import { cityToRegion } from "@/lib/domain/regions";
-import { Dialog, Box, Text, Tag, Button } from "@chakra-ui/react";
+import { Dialog, Box, Text, Button } from "@chakra-ui/react";
+import { TagsList } from "@/components/atoms";
 
 interface Props {
   job: JobItem | null;
@@ -80,18 +81,14 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                   </Box>
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500">Skills</Text>
-                    <Box display="flex" flexWrap="wrap" gap="xs" mt="xs">
-                      {(job.skills ?? []).map((s, i) => (
-                        <Tag.Root key={`${job.id}-skill-${i}`} size="sm"><Tag.Label>{s}</Tag.Label></Tag.Root>
-                      ))}
+                    <Box mt="xs">
+                      <TagsList items={job.skills ?? []} />
                     </Box>
                   </Box>
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500">Soft skills</Text>
-                    <Box display="flex" flexWrap="wrap" gap="xs" mt="xs">
-                      {(job.soft_skills ?? []).map((s, i) => (
-                        <Tag.Root key={`${job.id}-soft-${i}`} size="sm"><Tag.Label>{s}</Tag.Label></Tag.Root>
-                      ))}
+                    <Box mt="xs">
+                      <TagsList items={job.soft_skills ?? []} />
                     </Box>
                   </Box>
                 </Box>
