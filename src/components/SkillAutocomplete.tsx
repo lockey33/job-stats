@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Input, Button } from "@chakra-ui/react";
 
 function norm(s: string) { return s.toLowerCase().trim(); }
 
@@ -46,31 +47,31 @@ export default function SkillAutocomplete({ options, value, onChange, placeholde
   }
 
   return (
-    <div ref={ref} className="w-full">
-      <div className="flex items-center gap-2">
-        <input
+    <Box ref={ref} w="full">
+      <Box display="flex" alignItems="center" gap={2}>
+        <Input
           type="text"
           value={input}
           onChange={(e) => { setInput(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
+          size="sm"
         />
         {value && (
-          <button type="button" onClick={clear} className="px-2 py-2 rounded border border-gray-200 dark:border-zinc-800 text-sm">
+          <Button type="button" size="sm" variant="outline" onClick={clear}>
             Effacer
-          </button>
+          </Button>
         )}
-      </div>
+      </Box>
       {open && suggestions.length > 0 && (
-        <div className="mt-1 max-h-56 overflow-auto rounded-md border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+        <Box mt={1} maxH="14rem" overflowY="auto" rounded="md" borderWidth="1px" bg="white" shadow="sm">
           {suggestions.map((s) => (
-            <button key={s} type="button" className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-zinc-900" onClick={() => pick(s)}>
+            <Box key={s} as="button" w="full" textAlign="left" px={3} py={2} fontSize="sm" _hover={{ bg: "gray.50" }} onClick={() => pick(s)}>
               {s}
-            </button>
+            </Box>
           ))}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

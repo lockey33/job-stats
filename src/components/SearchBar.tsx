@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { Box, Input } from '@chakra-ui/react';
 
 interface Props {
   value?: string;
@@ -18,14 +19,17 @@ export default function SearchBar({ value = '', onChange, placeholder = 'Recherc
   }, [debounced, onChange]);
 
   return (
-    <div className="w-full">
-      <input
+    <Box w="full">
+      <Input
         type="text"
-        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
         placeholder={placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
+        size="sm"
+        bg="white"
+        shadow="sm"
+        borderColor="neutral.200"
       />
-    </div>
+    </Box>
   );
 }

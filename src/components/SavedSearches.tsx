@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { JobFilters } from "@/lib/domain/types";
 import { toQueryString } from "@/lib/utils/filters";
+import { Box, Input, Button, Tag, Text } from "@chakra-ui/react";
 
 const STORAGE_KEY = "job-stats:saved-searches:v1";
 
@@ -79,68 +80,45 @@ export default function SavedSearches({ currentFilters, onApply, className }: Pr
   }
 
   return (
-    <div className={className}>
-      <div className="rounded-lg border border-gray-200 dark:border-zinc-800 p-3 space-y-3">
-        <div className="flex flex-col md:flex-row gap-2 md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">Nom de la recherche</label>
-            <input
+    <Box className={className}>
+      <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none">
+        <Box display="flex" flexDirection={{ base: 'column', md: 'row' }} gap="sm" alignItems={{ md: 'flex-end' }}>
+          <Box flex="1">
+            <Text fontSize="sm" fontWeight="medium" mb="xs">Nom de la recherche</Text>
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="ex: Paris + React + TJM > 600"
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
+              size="sm"
             />
-          </div>
-          <button
-            type="button"
-            onClick={saveCurrent}
-            disabled={!canSave}
-            className="px-3 py-2 rounded-md text-sm bg-blue-600 text-white disabled:opacity-50"
-            title="Enregistrer la recherche actuelle"
-          >
+          </Box>
+          <Button size="sm" colorPalette="brand" disabled={!canSave} onClick={saveCurrent} title="Enregistrer la recherche actuelle">
             Enregistrer
-          </button>
-        </div>
+          </Button>
+        </Box>
 
         {items.length > 0 ? (
-          <div className="space-y-2">
-            <div className="text-xs text-gray-600 dark:text-gray-400">Favoris</div>
-            <div className="flex flex-wrap gap-2">
+          <Box mt="md">
+            <Text fontSize="xs" color="gray.600">Favoris</Text>
+            <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
               {items.map((it) => (
-                <div key={it.id} className="inline-flex items-center gap-2 border rounded px-2 py-1 text-xs">
-                  <button
-                    type="button"
-                    className="underline underline-offset-2"
-                    title={`Appliquer: ${it.name}`}
-                    onClick={() => applyItem(it)}
-                  >
-                    {it.name}
-                  </button>
-                  <button
-                    type="button"
-                    title="Copier le lien"
-                    className="text-gray-500 hover:text-gray-800"
-                    onClick={() => copyLink(it)}
-                  >
-                    🔗
-                  </button>
-                  <button
-                    type="button"
-                    title="Supprimer"
-                    className="text-red-600 hover:text-red-800"
-                    onClick={() => deleteItem(it.id)}
-                  >
-                    ✕
-                  </button>
-                </div>
+                <Tag.Root key={it.id} size="sm">
+                  <Tag.Label>
+                    <Button variant="plain" size="xs" onClick={() => applyItem(it)} title={`Appliquer: ${it.name}`}>
+                      {it.name}
+                    </Button>
+                  </Tag.Label>
+                  <Button size="xs" variant="ghost" onClick={() => copyLink(it)} title="Copier le lien">🔗</Button>
+                  <Tag.CloseTrigger onClick={() => deleteItem(it.id)} title="Supprimer" />
+                </Tag.Root>
               ))}
-            </div>
-          </div>
+            </Box>
+          </Box>
         ) : (
-          <div className="text-xs text-gray-600">Aucune recherche enregistrée pour le moment.</div>
+          <Text fontSize="xs" color="gray.600" mt="sm">Aucune recherche enregistrée pour le moment.</Text>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

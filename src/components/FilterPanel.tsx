@@ -8,6 +8,8 @@ import ChipsInput from '@/components/ChipsInput';
 import DatePicker from 'react-datepicker';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Box, Text, Input, HStack, Checkbox, Grid } from '@chakra-ui/react';
+import ChakraDateInput from '@/components/ChakraDateInput';
 
 export interface FilterPanelProps {
   meta: MetaFacets | null;
@@ -57,200 +59,213 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-zinc-800 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Skills</label>
-        <SkillMultiSelect
-          options={meta?.skills ?? []}
-          value={value.skills ?? []}
-          onChange={(skills) => update({ skills })}
-          placeholder="Ajouter des skills…"
-        />
-      </div>
+    <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none">
+      <Grid gap="md" templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }}>
+        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
+          <Text fontSize="sm" fontWeight="medium">Skills</Text>
+          <SkillMultiSelect
+            options={meta?.skills ?? []}
+            value={value.skills ?? []}
+            onChange={(skills) => update({ skills })}
+            placeholder="Ajouter des skills…"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Skills à exclure</label>
-        <SkillMultiSelect
-          options={meta?.skills ?? []}
-          value={value.excludeSkills ?? []}
-          onChange={(excludeSkills) => update({ excludeSkills })}
-          placeholder="Tapez pour exclure des skills…"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
+          <Text fontSize="sm" fontWeight="medium">Skills à exclure</Text>
+          <SkillMultiSelect
+            options={meta?.skills ?? []}
+            value={value.excludeSkills ?? []}
+            onChange={(excludeSkills) => update({ excludeSkills })}
+            placeholder="Tapez pour exclure des skills…"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Mots-clés à exclure (dans le titre)</label>
-        <ChipsInput
-          value={value.excludeTitle ?? []}
-          onChange={(excludeTitle) => update({ excludeTitle })}
-          placeholder="ex: alternance, stage, junior"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
+          <Text fontSize="sm" fontWeight="medium">Mots-clés à exclure (dans le titre)</Text>
+          <ChipsInput
+            value={value.excludeTitle ?? []}
+            onChange={(excludeTitle) => update({ excludeTitle })}
+            placeholder="ex: alternance, stage, junior"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Villes</label>
-        <CityMultiSelect
-          options={cityOptions}
-          value={value.cities ?? []}
-          onChange={(cities) => update({ cities })}
-          placeholder="Tapez pour rechercher une ville..."
-        />
-        <div className="pt-1 flex items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
+          <Text fontSize="sm" fontWeight="medium">Villes</Text>
+          <CityMultiSelect
+            options={cityOptions}
+            value={value.cities ?? []}
+            onChange={(cities) => update({ cities })}
+            placeholder="Tapez pour rechercher une ville..."
+          />
+          <HStack pt="xs" gap="sm" align="center">
+            <Checkbox.Root
               checked={(value.cityMatch ?? 'contains') === 'exact'}
-              onChange={(e) => update({ cityMatch: e.target.checked ? 'exact' : 'contains' })}
-            />
-            Correspondance exacte
-          </label>
-          <label className="inline-flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
+              onCheckedChange={(d: any) => update({ cityMatch: d.checked ? 'exact' : 'contains' })}
+            >
+              <Checkbox.HiddenInput />
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Checkbox.Label>
+                <Text fontSize="xs">Correspondance exacte</Text>
+              </Checkbox.Label>
+            </Checkbox.Root>
+            <Checkbox.Root
               checked={!!value.excludeCities}
-              onChange={(e) => update({ excludeCities: e.target.checked })}
-            />
-            Exclure ces villes
-          </label>
-        </div>
-      </div>
+              onCheckedChange={(d: any) => update({ excludeCities: !!d.checked })}
+            >
+              <Checkbox.HiddenInput />
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Checkbox.Label>
+                <Text fontSize="xs">Exclure ces villes</Text>
+              </Checkbox.Label>
+            </Checkbox.Root>
+          </HStack>
+        </Box>
 
-      {/* Regions */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Régions</label>
-        <CityMultiSelect
-          options={regionOptions}
-          value={value.regions ?? []}
-          onChange={(regions) => update({ regions })}
-          placeholder="Tapez pour rechercher une région..."
-        />
-        <div className="pt-1 flex items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
+          <Text fontSize="sm" fontWeight="medium">Régions</Text>
+          <CityMultiSelect
+            options={regionOptions}
+            value={value.regions ?? []}
+            onChange={(regions) => update({ regions })}
+            placeholder="Tapez pour rechercher une région..."
+          />
+          <HStack pt="xs" gap="md" align="center">
+            <Checkbox.Root
               checked={!!value.excludeRegions}
-              onChange={(e) => update({ excludeRegions: e.target.checked })}
-            />
-            Exclure ces régions
-          </label>
-        </div>
-      </div>
+              onCheckedChange={(d: any) => update({ excludeRegions: !!d.checked })}
+            >
+              <Checkbox.HiddenInput />
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Checkbox.Label>
+                <Text fontSize="xs">Exclure ces régions</Text>
+              </Checkbox.Label>
+            </Checkbox.Root>
+          </HStack>
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Job slugs (séparés par des virgules)</label>
-        <input
-          type="text"
-          value={jobSlugsText}
-          onChange={(e) => setJobSlugsText(e.target.value)}
-          onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
-          placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }}>
+          <Text fontSize="sm" fontWeight="medium">Job slugs (séparés par des virgules)</Text>
+          <Input
+            type="text"
+            value={jobSlugsText}
+            onChange={(e) => setJobSlugsText(e.target.value)}
+            onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
+            placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
+            size="sm"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Télétravail</label>
-        <div className="flex flex-wrap gap-2">
-          {remoteOptions.map((r) => {
-            const checked = (value.remote ?? []).includes(r);
-            return (
-              <label key={r} className="inline-flex items-center gap-2 text-sm border rounded-md px-2 py-1">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => {
-                    const cur = new Set(value.remote ?? []);
-                    if (e.target.checked) cur.add(r);
-                    else cur.delete(r);
-                    update({ remote: Array.from(cur) });
-                  }}
-                />
-                {r}
-              </label>
-            );
-          })}
-        </div>
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
+          <Text fontSize="sm" fontWeight="medium">Télétravail</Text>
+          <HStack gap="sm" wrap="wrap">
+            {remoteOptions.map((r) => {
+              const checked = (value.remote ?? []).includes(r);
+              return (
+                <Checkbox.Root key={r} checked={checked} onCheckedChange={(d: any) => {
+                  const cur = new Set(value.remote ?? []);
+                  if (d.checked) cur.add(r); else cur.delete(r);
+                  update({ remote: Array.from(cur) });
+                }}>
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Checkbox.Label>
+                    <Text fontSize="sm">{r}</Text>
+                  </Checkbox.Label>
+                </Checkbox.Root>
+              );
+            })}
+          </HStack>
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Expérience</label>
-        <div className="flex flex-wrap gap-2">
-          {expOptions.map((exp) => {
-            const checked = (value.experience ?? []).includes(exp);
-            return (
-              <label key={exp} className="inline-flex items-center gap-2 text-sm border rounded-md px-2 py-1">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => {
-                    const cur = new Set(value.experience ?? []);
-                    if (e.target.checked) cur.add(exp);
-                    else cur.delete(exp);
-                    update({ experience: Array.from(cur) });
-                  }}
-                />
-                {exp}
-              </label>
-            );
-          })}
-        </div>
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
+          <Text fontSize="sm" fontWeight="medium">Expérience</Text>
+          <HStack gap="sm" wrap="wrap">
+            {expOptions.map((exp) => {
+              const checked = (value.experience ?? []).includes(exp);
+              return (
+                <Checkbox.Root key={exp} checked={checked} onCheckedChange={(d: any) => {
+                  const cur = new Set(value.experience ?? []);
+                  if (d.checked) cur.add(exp); else cur.delete(exp);
+                  update({ experience: Array.from(cur) });
+                }}>
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Checkbox.Label>
+                    <Text fontSize="sm">{exp}</Text>
+                  </Checkbox.Label>
+                </Checkbox.Root>
+              );
+            })}
+          </HStack>
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">TJM min</label>
-        <input
-          type="number"
-          value={value.minTjm ?? ''}
-          onChange={(e) => update({ minTjm: e.target.value ? Number(e.target.value) : undefined })}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
+          <Text fontSize="sm" fontWeight="medium">TJM min</Text>
+          <Input
+            type="number"
+            value={value.minTjm ?? ''}
+            onChange={(e) => update({ minTjm: e.target.value ? Number(e.target.value) : undefined })}
+            size="sm"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">TJM max</label>
-        <input
-          type="number"
-          value={value.maxTjm ?? ''}
-          onChange={(e) => update({ maxTjm: e.target.value ? Number(e.target.value) : undefined })}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
+          <Text fontSize="sm" fontWeight="medium">TJM max</Text>
+          <Input
+            type="number"
+            value={value.maxTjm ?? ''}
+            onChange={(e) => update({ maxTjm: e.target.value ? Number(e.target.value) : undefined })}
+            size="sm"
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Date de début</label>
-        <DatePicker
-          selected={ymdToDate(value.startDate)}
-          onChange={(d: Date | null) => update({ startDate: dateToYmd(d) })}
-          dateFormat="yyyy-MM-dd"
-          placeholderText="Choisir une date"
-          isClearable
-          maxDate={ymdToDate(value.endDate) ?? undefined}
-          selectsStart
-          startDate={ymdToDate(value.startDate) ?? undefined}
-          endDate={ymdToDate(value.endDate) ?? undefined}
-          todayButton="Aujourd’hui"
-          locale={fr}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
-        />
-      </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
+          <Text fontSize="sm" fontWeight="medium">Date de début</Text>
+          <DatePicker
+            selected={ymdToDate(value.startDate)}
+            onChange={(d: Date | null) => update({ startDate: dateToYmd(d) })}
+            dateFormat="yyyy-MM-dd"
+            placeholderText="Choisir une date"
+            isClearable
+            maxDate={ymdToDate(value.endDate) ?? undefined}
+            selectsStart
+            startDate={ymdToDate(value.startDate) ?? undefined}
+            endDate={ymdToDate(value.endDate) ?? undefined}
+            todayButton="Aujourd’hui"
+            locale={fr}
+            customInput={<ChakraDateInput />}
+          />
+        </Box>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Date de fin</label>
-        <DatePicker
-          selected={ymdToDate(value.endDate)}
-          onChange={(d: Date | null) => update({ endDate: dateToYmd(d) })}
-          dateFormat="yyyy-MM-dd"
-          placeholderText="Choisir une date"
-          isClearable
-          minDate={ymdToDate(value.startDate) ?? undefined}
-          selectsEnd
-          startDate={ymdToDate(value.startDate) ?? undefined}
-          endDate={ymdToDate(value.endDate) ?? undefined}
-          todayButton="Aujourd’hui"
-          locale={fr}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 dark:border-zinc-800"
-        />
-      </div>
-    </div>
+        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
+          <Text fontSize="sm" fontWeight="medium">Date de fin</Text>
+          <DatePicker
+            selected={ymdToDate(value.endDate)}
+            onChange={(d: Date | null) => update({ endDate: dateToYmd(d) })}
+            dateFormat="yyyy-MM-dd"
+            placeholderText="Choisir une date"
+            isClearable
+            minDate={ymdToDate(value.startDate) ?? undefined}
+            selectsEnd
+            startDate={ymdToDate(value.startDate) ?? undefined}
+            endDate={ymdToDate(value.endDate) ?? undefined}
+            todayButton="Aujourd’hui"
+            locale={fr}
+            customInput={<ChakraDateInput />}
+          />
+        </Box>
+      </Grid>
+    </Box>
   );
 }

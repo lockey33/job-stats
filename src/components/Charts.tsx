@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import { AnalyticsResult } from '@/lib/domain/types';
+import { Box, Text } from '@chakra-ui/react';
 
 const COLORS = [
   '#2563eb',
@@ -33,11 +34,11 @@ export default function Charts({ data }: Props) {
   if (!data) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap="lg">
       {/* Postings per month */}
-      <div className="rounded-lg border border-gray-200 dark:border-zinc-800 p-3">
-        <h3 className="text-sm font-semibold mb-2">Nombre d'offres par mois</h3>
-        <div className="h-64">
+      <Box borderWidth="0px" p={0} bg="transparent" shadow="none">
+        <Text fontSize="sm" fontWeight="semibold" mb="sm">Nombre d'offres par mois</Text>
+        <Box h="16rem">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.postingsPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -47,13 +48,13 @@ export default function Charts({ data }: Props) {
               <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Average TJM per month */}
-      <div className="rounded-lg border border-gray-200 dark:border-zinc-800 p-3">
-        <h3 className="text-sm font-semibold mb-2">TJM moyen par mois (€)</h3>
-        <div className="h-64">
+      <Box borderWidth="0px" p={0} bg="transparent" shadow="none">
+        <Text fontSize="sm" fontWeight="semibold" mb="sm">TJM moyen par mois (€)</Text>
+        <Box h="16rem">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.avgTjmPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -63,14 +64,14 @@ export default function Charts({ data }: Props) {
               <Line type="monotone" dataKey="value" stroke="#16a34a" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Skills trends per month */}
-      <div className="lg:col-span-2 rounded-lg border border-gray-200 dark:border-zinc-800 p-3">
-        <h3 className="text-sm font-semibold mb-1">Tendances des skills</h3>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Vous pouvez ajouter/retirer des skills à tracer depuis le sélecteur ci-dessus.</p>
-        <div className="h-80">
+      <Box borderWidth="0px" p={0} bg="transparent" shadow="none" gridColumn={{ lg: '1 / -1' }}>
+        <Text fontSize="sm" fontWeight="semibold" mb="xs">Tendances des skills</Text>
+        <Text fontSize="xs" color="gray.600" mb="sm">Vous pouvez ajouter/retirer des skills à tracer depuis le sélecteur ci-dessus.</Text>
+        <Box h="20rem">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.skillsPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -83,8 +84,8 @@ export default function Charts({ data }: Props) {
               ))}
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }

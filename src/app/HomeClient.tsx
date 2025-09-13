@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import SearchBar from '@/components/SearchBar';
 import FilterPanel from '@/components/FilterPanel';
 import ResultsTable from '@/components/ResultsTable';
@@ -13,6 +13,7 @@ import SavedSearches from '@/components/SavedSearches';
 import { downloadExcel } from '@/lib/utils/export';
 import { AnalyticsResult, JobFilters, JobsResult, MetaFacets, JobItem } from '@/lib/domain/types';
 import { fetchAnalytics, fetchJobs, fetchMeta } from '@/lib/utils/api';
+import { Container, Stack, Heading, Text, Button, Flex, Box, Checkbox, Alert } from '@chakra-ui/react';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -144,53 +145,43 @@ export default function HomeClient() {
   }, [jobs, filters, pageSize]);
 
   return (
-    <div className="min-h-screen w-full max-w-7xl mx-auto p-6 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Job Stats Explorer</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+    <Container maxW="7xl" py="lg" minH="100vh">
+      <Stack as="header" gap="xs" mb="md">
+        <Heading size="lg">Job Stats Explorer</Heading>
+        <Text fontSize="sm" color="gray.600">
           Recherchez et filtrez les offres, et explorez les tendances (skills, TJM) à partir de votre dataset fusionné.
-        </p>
-      </header>
+        </Text>
+      </Stack>
 
-      <section className="space-y-4">
+      <Box bg="white" rounded="lg" borderWidth="1px" shadow="sm" p="md">
         <SearchBar value={filters.q} onChange={onSearchChange} />
         <FilterPanel meta={meta} value={filters} onChange={onFiltersChange} />
-        <SavedSearches
-          currentFilters={filters}
-          onApply={(f) => onFiltersChange(f)}
-        />
-      </section>
+        <SavedSearches currentFilters={filters} onApply={(f) => onFiltersChange(f)} />
+        {loading && <Text fontSize="sm" color="gray.600">Chargement…</Text>}
+        {jobs && (
+          <Flex align="center" justify="flex-end" gap="sm">
+            <Button size="sm" variant="outline" colorPalette="brand" onClick={onExportCurrentPage} disabled={exporting} title="Exporter la page courante en Excel">
+              Exporter (page)
+            </Button>
+            <Button size="sm" variant="solid" colorPalette="brand" onClick={onExportAllFiltered} disabled={exporting} title="Exporter tous les résultats filtrés en Excel">
+              Exporter (tous)
+            </Button>
+          </Flex>
+        )}
+      </Box>
 
       {error && (
-        <div className="text-sm text-red-600 border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950 p-3 rounded">
-          {error}
-        </div>
+        <Alert.Root status="error" mb="md">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Erreur</Alert.Title>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Content>
+        </Alert.Root>
       )}
 
-      <section className="space-y-3">
-        {loading && <div className="text-sm text-gray-600">Chargement…</div>}
-        {jobs && (
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onExportCurrentPage}
-              disabled={exporting}
-              className="px-3 py-2 rounded border border-gray-200 dark:border-zinc-800 text-sm"
-              title="Exporter la page courante en Excel"
-            >
-              Exporter (page)
-            </button>
-            <button
-              type="button"
-              onClick={onExportAllFiltered}
-              disabled={exporting}
-              className="px-3 py-2 rounded border border-gray-200 dark:border-zinc-800 text-sm"
-              title="Exporter tous les résultats filtrés en Excel"
-            >
-              Exporter (tous)
-            </button>
-          </div>
-        )}
+      <Stack gap="md" mb="lg">
+
         {jobs && (
           <ResultsTable
             items={jobs.items}
@@ -207,9 +198,9 @@ export default function HomeClient() {
             onPageChange={onPageChange}
           />
         )}
-      </section>
+      </Stack>
 
-      <section className="space-y-3">
+      <Stack gap="md" mb="lg">
         {meta && (
           <SkillSeriesControl
             options={meta.skills}
@@ -224,36 +215,39 @@ export default function HomeClient() {
             topSkills={analytics?.topSkills}
           />
         )}
-        <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-3">
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={!seriesCustom}
-              onChange={(e) => {
-                const auto = e.target.checked;
-                setSeriesCustom(!auto);
-                if (auto && analytics) {
-                  // immediately sync to current server-provided series
-                  setSeriesSkills(analytics.seriesSkills);
-                }
-              }}
-            />
-            Suivre automatiquement le Top 10 (s’adapte aux filtres)
-          </label>
-        </div>
+        <Box fontSize="xs" color="gray.600">
+          <Checkbox.Root
+            checked={!seriesCustom}
+            onCheckedChange={(detail: any) => {
+              const auto = !!detail.checked;
+              setSeriesCustom(!auto);
+              if (auto && analytics) {
+                setSeriesSkills(analytics.seriesSkills);
+              }
+            }}
+          >
+            <Checkbox.HiddenInput />
+            <Checkbox.Control>
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+            <Checkbox.Label>
+              Suivre automatiquement le Top 10 (s’adapte aux filtres)
+            </Checkbox.Label>
+          </Checkbox.Root>
+        </Box>
         <Charts data={analytics} />
-      </section>
+      </Stack>
 
-      <section className="space-y-3">
+      <Stack gap="md">
         <CitySkillTrendView
           filters={filters}
           meta={meta}
           defaultSkill={analytics?.topSkills?.[0]}
         />
-      </section>
+      </Stack>
 
       {/* Job details modal */}
       <JobDetailsModal job={selectedJob} onClose={() => setSelectedJob(null)} />
-    </div>
+    </Container>
   );
 }
