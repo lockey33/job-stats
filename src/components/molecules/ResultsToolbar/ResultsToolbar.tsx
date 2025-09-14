@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, HStack, Text } from "@chakra-ui/react";
+import { DownloadIcon } from "@/components/atoms/Icons/Icons";
 
 interface Props {
   total?: number;
@@ -23,21 +24,22 @@ export default function ResultsToolbar({
   return (
     <HStack as="section" justify="space-between" align="center" w="full" py="sm">
       <HStack gap="sm">
-        {typeof total === "number" && (
-          <Text fontSize="sm" color="gray.700" aria-live="polite">{fmt.format(total)} résultats</Text>
-        )}
         {leftSlot}
       </HStack>
-      <HStack gap="sm">
+      <HStack gap="sm" align="center">
         {rightSlot}
-        <Button size="sm" variant="outline" colorPalette="brand" onClick={onExportCurrentPage} disabled={exporting} title="Exporter la page courante en Excel">
+        <Button size="md" variant="outline" colorPalette="brand" onClick={onExportCurrentPage} disabled={exporting} title="Exporter la page courante en Excel">
+          <DownloadIcon boxSize="1.25em" />
           Exporter (page)
         </Button>
-        <Button size="sm" variant="solid" colorPalette="brand" onClick={onExportAllFiltered} disabled={exporting} title="Exporter tous les résultats filtrés en Excel">
+        <Button size="md" variant="solid" colorPalette="brand" onClick={onExportAllFiltered} disabled={exporting} title="Exporter tous les résultats filtrés en Excel">
+          <DownloadIcon boxSize="1.25em" />
           Exporter (tous)
         </Button>
+        {typeof total === "number" && (
+          <Text fontSize="sm" color="gray.700" aria-live="polite" ml="sm">{fmt.format(total)} résultats</Text>
+        )}
       </HStack>
     </HStack>
   );
 }
-

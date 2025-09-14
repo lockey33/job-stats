@@ -6,9 +6,9 @@ import { fetchCitySkillTrend } from "@/features/jobs/api/endpoints";
 import Autocomplete from "@/components/molecules/Autocomplete/Autocomplete";
 import MultiSelect from "@/components/molecules/MultiSelect/MultiSelect";
 import { normCity } from "@/shared/utils/normalize";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, Legend } from "recharts";
-import { Box, Text, Input, Checkbox, Alert } from "@chakra-ui/react";
-import type { CheckboxCheckedChangeDetails } from "@chakra-ui/react";
+import { Box, Text, Alert, Grid, SliderRoot, SliderTrack, SliderRange, SliderThumb, SliderControl } from "@chakra-ui/react";
 
 const COLORS = [
   '#2563eb', '#16a34a', '#dc2626', '#7c3aed', '#ea580c', '#0ea5e9', '#22c55e', '#e11d48', '#a855f7', '#f59e0b', '#14b8a6', '#9333ea'
@@ -23,8 +23,8 @@ interface Props {
 export default function CitySkillTrendView({ filters, meta, defaultSkill }: Props) {
   const [skill, setSkill] = useState<string>(defaultSkill || "");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [useSelectedCities, setUseSelectedCities] = useState<boolean>(false);
   const [topCityCount, setTopCityCount] = useState<number>(5);
+  const debouncedTopCityCount = useDebounce(topCityCount, 300);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +53,8 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       const payload = await fetchCitySkillTrend(
         filters,
         skill,
-        useSelectedCities && selectedCities.length > 0 ? selectedCities : undefined,
-        topCityCount,
+        selectedCities.length > 0 ? selectedCities : undefined,
+        debouncedTopCityCount,
       );
       // Transform into recharts format: [{month, CityA: n, CityB: m, ...}, ...]
       const cities = Object.keys(payload.citySeries);
@@ -74,7 +74,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
     } finally {
       setLoading(false);
     }
-  }, [filters, skill, selectedCities, useSelectedCities, topCityCount]);
+  }, [filters, skill, selectedCities, debouncedTopCityCount]);
 
   useEffect(() => {
     triggerFetch();
@@ -169,8 +169,8 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
 
   return (
     <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none" display="flex" flexDirection="column" gap="md">
-      <Box display="flex" flexDirection={{ base: 'column', md: 'row' }} gap="md" alignItems={{ md: 'flex-end' }}>
-        <Box flex={{ base: 'unset', md: 1 }} w="full">
+      <Grid templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }} gap="md" alignItems="end">
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium" mb="xs">Skill</Text>
           <Autocomplete
             options={meta?.skills ?? []}
@@ -179,7 +179,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
             placeholder="Choisir un skill à comparer entre les villes…"
           />
         </Box>
-        <Box flex={{ base: 'unset', md: 1 }} w="full">
+        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium" mb="xs">Villes (facultatif)</Text>
           <MultiSelect
             options={cityOptions}
@@ -189,27 +189,27 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
             normalize={normCity}
             dedupeByNormalized={false}
           />
-          <Box display="flex" alignItems="center" gap="md" mt="sm" fontSize="xs">
-            <Checkbox.Root checked={useSelectedCities} onCheckedChange={(d: CheckboxCheckedChangeDetails) => setUseSelectedCities(!!d.checked)}>
-              <Checkbox.HiddenInput />
-              <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
-              <Checkbox.Label>Utiliser uniquement ces villes</Checkbox.Label>
-            </Checkbox.Root>
-            <Box display="flex" alignItems="center" gap="sm" minW={{ md: '20rem' }}>
-              <Text>Top N villes:</Text>
-              <Input
-                type="range"
-                min={1}
-                max={12}
-                value={topCityCount}
-                onChange={(e) => setTopCityCount(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
-                w="full"
-              />
-              <Box as="span" fontWeight="medium" minW="2rem" textAlign="right">{topCityCount}</Box>
-            </Box>
-          </Box>
         </Box>
-      </Box>
+        <Box gridColumn={{ base: '1/-1', md: 'span 12' }}>
+          <Box display="flex" flexWrap="wrap" alignItems="center" justifyContent="flex-end" gap="sm" mt="sm">
+            <Text fontSize="xs" color="textMuted" whiteSpace="nowrap">Top N villes</Text>
+            <Box flex={1} minW={{ md: '20rem' }} maxW={{ md: '28rem' }}>
+              <SliderRoot min={1} max={12} value={[topCityCount]} onValueChange={(d) => setTopCityCount(d.value[0])} disabled={selectedCities.length > 0} size="md" aria-label="Top N villes">
+                <SliderControl>
+                  <SliderTrack h="2" bg="neutral.200" rounded="md">
+                    <SliderRange bg="brand.500" rounded="md" />
+                  </SliderTrack>
+                  <SliderThumb index={0} boxSize="4" bg="surface" borderWidth="2px" borderColor="brand.500" rounded="full" shadow="sm" />
+                </SliderControl>
+              </SliderRoot>
+            </Box>
+            <Box as="span" fontWeight="medium" minW="2rem" textAlign="right">{topCityCount}</Box>
+          </Box>
+          {selectedCities.length > 0 && (
+            <Text fontSize="xs" color="textMuted" mt="1">Le Top N s’applique lorsqu’aucune ville n’est sélectionnée.</Text>
+          )}
+        </Box>
+      </Grid>
 
       {error && (
         <Alert.Root status="error">
@@ -224,7 +224,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
 
       {chartData.length > 0 ? (
         <Box>
-          <Text fontSize="sm" fontWeight="semibold" mb="sm">Skill « {skill} » par ville (par mois)</Text>
+          <Text fontSize="sm" fontWeight="semibold" mb="xs">Skill « {skill} » par ville (par mois)</Text>
           <Box h="24rem">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { cityToRegion } from "@/shared/geo/regions";
-import { Dialog, Box, Text, Button } from "@chakra-ui/react";
+import { Drawer, Box, Text, Button } from "@chakra-ui/react";
 import TagsList from "@/components/atoms/TagsList/TagsList";
 import type { JobItem } from "@/features/jobs/types/types";
 
@@ -19,67 +18,50 @@ function formatTjm(min?: number | null, max?: number | null) {
   return `${fmt(v)} €`;
 }
 
+function stripHtml(input?: string | null) {
+  if (!input) return "";
+  return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase();
   switch (v) {
-    case 'junior':
-      return 'Junior';
-    case 'intermediate':
-      return 'Confirmé';
-    case 'senior':
-      return 'Senior';
-    default:
-      return exp || '—';
+    case 'junior': return 'Junior';
+    case 'intermediate': return 'Confirmé';
+    case 'senior': return 'Senior';
+    default: return exp || '—';
   }
 }
 
 function formatRemote(remote?: string | null): string {
   const v = (remote || '').toString().toLowerCase();
   switch (v) {
-    case 'full':
-      return 'Total';
-    case 'partial':
-      return 'Partiel';
-    case 'none':
-      return 'Aucun';
-    default:
-      return remote || '—';
+    case 'full': return 'Total';
+    case 'partial': return 'Partiel';
+    case 'none': return 'Aucun';
+    default: return remote || '—';
   }
 }
 
-function stripHtml(input?: string | null) {
-  if (!input) return "";
-  return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-}
-
-export default function JobDetailsModal({ job, onClose }: Props) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
+export default function JobDetailsDrawer({ job, onClose }: Props) {
   const open = !!job;
+  const title = job?.title ?? job?.slug ?? job?.job_slug ?? "Offre";
   const region = job ? (cityToRegion(job.city ?? undefined) ?? "—") : "—";
 
   return (
-    <Dialog.Root open={open} onOpenChange={(e) => { if (!e.open) onClose(); }} placement="center">
-      <Dialog.Backdrop />
-      <Dialog.Positioner>
-        <Dialog.Content maxW="3xl">
-          <Dialog.Header>
-            <Dialog.Title>
-              {job?.title ?? job?.slug ?? job?.job_slug ?? "Offre"}
-            </Dialog.Title>
-            <Dialog.CloseTrigger asChild>
-              <Button size="xs" variant="outline" onClick={onClose} aria-label="Fermer">✕</Button>
-            </Dialog.CloseTrigger>
-          </Dialog.Header>
-          <Dialog.Body>
+    <Drawer.Root open={open} placement="end" onOpenChange={(e) => { if (!e.open) onClose(); }}>
+      <Drawer.Backdrop />
+      <Drawer.Positioner>
+        <Drawer.Content maxW={{ base: '100%', md: '34rem' }}>
+          <Drawer.Header borderBottomWidth="1px" borderColor="border">
+            <Drawer.Title>{title}</Drawer.Title>
+            <Drawer.CloseTrigger asChild>
+              <Button size="xs" variant="outline" aria-label="Fermer">✕</Button>
+            </Drawer.CloseTrigger>
+          </Drawer.Header>
+          <Drawer.Body>
             {job && (
-              <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "1fr 2fr" }} gap="md">
+              <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "1fr 1.5fr" }} gap="md">
                 <Box display="flex" flexDirection="column" gap="sm">
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500">Entreprise</Text>
@@ -91,7 +73,7 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                   </Box>
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500">Télétravail</Text>
-                    <Text fontSize="sm">{formatRemote(job.remote ?? undefined)}</Text>
+                    <Text fontSize="sm">{formatRemote(job.remote)}</Text>
                   </Box>
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500">Expérience</Text>
@@ -123,7 +105,7 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                   </Box>
                 </Box>
 
-                <Box display="flex" flexDirection="column" gap="md">
+                <Box display="flex" flexDirection="column" gap="md" minH={0}>
                   <Box>
                     <Text fontSize="xs" textTransform="uppercase" color="gray.500" mb="xs">Description</Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">{stripHtml(job.description) || "—"}</Text>
@@ -139,9 +121,10 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                 </Box>
               </Box>
             )}
-          </Dialog.Body>
-        </Dialog.Content>
-      </Dialog.Positioner>
-    </Dialog.Root>
+          </Drawer.Body>
+        </Drawer.Content>
+      </Drawer.Positioner>
+    </Drawer.Root>
   );
 }
+

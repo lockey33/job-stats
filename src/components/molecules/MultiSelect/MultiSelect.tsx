@@ -86,22 +86,23 @@ export default function MultiSelect({
           ))}
         </Box>
       )}
-      <Input
-        type="text"
-        value={input}
-        onChange={(e) => {
-          setInput(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        placeholder={placeholder}
-        size="sm"
-      />
+      <Box position="relative">
+        <Input
+          type="text"
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          size="sm"
+        />
 
-      {open && suggestions.length > 0 && (
-        <SuggestionsList items={suggestions} onSelect={addItem} />
-      )}
+        {open && suggestions.length > 0 && (
+          <SuggestionsList items={suggestions} onSelect={addItem} overlay />
+        )}
+      </Box>
     </Box>
   );
 }
-

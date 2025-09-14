@@ -53,7 +53,7 @@ export default function Autocomplete({ options, value, onChange, placeholder = "
 
   return (
     <Box ref={ref} w="full">
-      <Box display="flex" alignItems="center" gap={2}>
+      <Box position="relative" display="flex" alignItems="center" gap={2}>
         <Input
           type="text"
           value={input}
@@ -67,11 +67,10 @@ export default function Autocomplete({ options, value, onChange, placeholder = "
             Effacer
           </Button>
         )}
+        {open && suggestions.length > 0 && (
+          <SuggestionsList items={suggestions} onSelect={pick} overlay />
+        )}
       </Box>
-      {open && suggestions.length > 0 && (
-        <SuggestionsList items={suggestions} onSelect={pick} />
-      )}
     </Box>
   );
 }
-

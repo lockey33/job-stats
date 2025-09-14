@@ -31,7 +31,7 @@ export default function SearchBar({ value = '', onChange, placeholder = 'Recherc
         value={text}
         onChange={(e) => setText(e.target.value)}
         aria-label="Recherche"
-        size="sm"
+        size="md"
         bg="white"
         shadow="sm"
         borderColor="neutral.200"

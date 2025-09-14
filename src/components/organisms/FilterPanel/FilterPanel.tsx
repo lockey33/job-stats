@@ -16,6 +16,8 @@ export interface FilterPanelProps {
   meta: MetaFacets | null;
   value: JobFilters;
   onChange: (filters: JobFilters) => void;
+  compact?: boolean; // layout optimized for narrow containers (e.g., drawer)
+  showReset?: boolean; // show reset button in header (default true)
 }
 
 function parseCSV(input: string): string[] {
@@ -25,9 +27,8 @@ function parseCSV(input: string): string[] {
     .filter(Boolean);
 }
 
-export default function FilterPanel({ meta, value, onChange }: FilterPanelProps) {
+export default function FilterPanel({ meta, value, onChange, compact = false, showReset = true }: FilterPanelProps) {
   const [jobSlugsText, setJobSlugsText] = useState<string>((value.job_slugs ?? []).join(', '));
-  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setJobSlugsText((value.job_slugs ?? []).join(', '));
@@ -54,31 +55,35 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
     return d ? format(d, 'yyyy-MM-dd') : undefined;
   }
 
+  const gc = (md: string) => (compact ? { base: '1/-1' as const } : { base: '1/-1' as const, md: md });
+
+  function SectionTitle({ label, first = false }: { label: string; first?: boolean }) {
+    const mt = first ? '0' : (compact ? 'sm' : 'sm');
+    const pt = compact && !first ? 'md' : undefined;
+    const borderTopWidth = compact && !first ? '1px' : '0px';
+    return (
+      <Box gridColumn={gc('span 12')} mt={mt} pt={pt} borderTopWidth={borderTopWidth} borderColor="border">
+        <Text fontSize="xs" color="textMuted" textTransform="uppercase" letterSpacing="wide" mb="xs">{label}</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box rounded="lg" borderWidth="0px" p={0} bg="transparent" shadow="none" role="region" aria-labelledby="filters-heading">
       <HStack justify="space-between" align="center" mb="sm">
         <HStack gap="xs">
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => setAdvancedOpen((v) => !v)}
-            aria-expanded={advancedOpen}
-            aria-controls="advanced-filters"
-          >
-            {advancedOpen ? 'Masquer avancés' : 'Afficher avancés'}
-          </Button>
-          <Button size="xs" variant="outline" colorPalette="gray" onClick={() => onChange({})} aria-label="Réinitialiser tous les filtres">
-            Réinitialiser
-          </Button>
+          {showReset && (
+            <Button size="xs" variant="outline" colorPalette="gray" onClick={() => onChange({})} aria-label="Réinitialiser tous les filtres">
+              Réinitialiser
+            </Button>
+          )}
         </HStack>
       </HStack>
-      <Grid id="filter-panel-content" gap="md" templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }}>
+      <Grid id="filter-panel-content" gap={compact ? 'sm' : 'md'} templateColumns={compact ? { base: '1fr' } : { base: '1fr', md: 'repeat(12, 1fr)' }}>
         {/* Section: Compétences */}
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }}>
-          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Compétences</Text>
-        </Box>
-        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
-          <Text fontSize="sm" fontWeight="medium">Skills</Text>
+        <SectionTitle label="Compétences" first />
+        <Box gridColumn={gc('span 4')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Skills</Text>
           <MultiSelect
             options={meta?.skills ?? []}
             value={value.skills ?? []}
@@ -88,8 +93,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           />
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
-          <Text fontSize="sm" fontWeight="medium">Skills à exclure</Text>
+        <Box gridColumn={gc('span 4')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Skills à exclure</Text>
           <MultiSelect
             options={meta?.skills ?? []}
             value={value.excludeSkills ?? []}
@@ -99,8 +104,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           />
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 4' }}>
-          <Text fontSize="sm" fontWeight="medium">Mots-clés à exclure (dans le titre)</Text>
+        <Box gridColumn={gc('span 4')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Mots-clés à exclure (dans le titre)</Text>
           <ChipsInput
             value={value.excludeTitle ?? []}
             onChange={(excludeTitle) => update({ excludeTitle })}
@@ -109,11 +114,9 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
         </Box>
 
         {/* Section: Localisation */}
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
-          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Localisation</Text>
-        </Box>
-        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
-          <Text fontSize="sm" fontWeight="medium">Villes</Text>
+        <SectionTitle label="Localisation" />
+        <Box gridColumn={gc('span 6')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Villes</Text>
           <MultiSelect
             options={cityOptions}
             value={value.cities ?? []}
@@ -150,8 +153,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           </HStack>
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
-          <Text fontSize="sm" fontWeight="medium">Régions</Text>
+        <Box gridColumn={gc('span 6')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Régions</Text>
           <MultiSelect
             options={regionOptions}
             value={value.regions ?? []}
@@ -175,27 +178,24 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           </HStack>
         </Box>
 
-        {advancedOpen && (
-          <Box id="advanced-filters" gridColumn={{ base: '1/-1', md: 'span 12' }}>
-            <Text fontSize="sm" fontWeight="medium">Job slugs (séparés par des virgules)</Text>
-            <Input
-              type="text"
-              value={jobSlugsText}
-              onChange={(e) => setJobSlugsText(e.target.value)}
-              onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
-              placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
-              size="sm"
-              aria-label="Job slugs, séparés par des virgules"
-            />
-          </Box>
-        )}
+        <Box id="advanced-filters" gridColumn={gc('span 12')}>
+          <SectionTitle label="Avancés" />
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Job slugs (séparés par des virgules)</Text>
+          <Input
+            type="text"
+            value={jobSlugsText}
+            onChange={(e) => setJobSlugsText(e.target.value)}
+            onBlur={() => update({ job_slugs: parseCSV(jobSlugsText) })}
+            placeholder="ex: developpeur-front-end-javascript-node-react-angular-vue"
+            size="sm"
+            aria-label="Job slugs, séparés par des virgules"
+          />
+        </Box>
 
         {/* Section: Caractéristiques */}
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
-          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Caractéristiques</Text>
-        </Box>
-        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
-          <Text fontSize="sm" fontWeight="medium">Télétravail</Text>
+        <SectionTitle label="Caractéristiques" />
+        <Box gridColumn={gc('span 6')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Télétravail</Text>
           <HStack gap="sm" wrap="wrap">
             {remoteOptions.map((r) => {
               const checked = (value.remote ?? []).includes(r);
@@ -218,8 +218,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           </HStack>
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
-          <Text fontSize="sm" fontWeight="medium">Expérience</Text>
+        <Box gridColumn={gc('span 6')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Expérience</Text>
           <HStack gap="sm" wrap="wrap">
             {expOptions.map((exp) => {
               const checked = (value.experience ?? []).includes(exp);
@@ -243,11 +243,9 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
         </Box>
 
         {/* Section: Finances */}
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
-          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Finances</Text>
-        </Box>
-        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
-          <Text fontSize="sm" fontWeight="medium">TJM min</Text>
+        <SectionTitle label="Finances" />
+        <Box gridColumn={gc('span 3')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">TJM min</Text>
           <Input
             type="number"
             value={value.minTjm ?? ''}
@@ -257,8 +255,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           />
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
-          <Text fontSize="sm" fontWeight="medium">TJM max</Text>
+        <Box gridColumn={gc('span 3')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">TJM max</Text>
           <Input
             type="number"
             value={value.maxTjm ?? ''}
@@ -269,11 +267,9 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
         </Box>
 
         {/* Section: Période */}
-        <Box gridColumn={{ base: '1/-1', md: 'span 12' }} mt="sm">
-          <Text fontSize="xs" color="gray.600" textTransform="uppercase" letterSpacing="wide">Période</Text>
-        </Box>
-        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
-          <Text fontSize="sm" fontWeight="medium">Date de début</Text>
+        <SectionTitle label="Période" />
+        <Box gridColumn={gc('span 3')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Date de début</Text>
           <DatePicker
             selected={ymdToDate(value.startDate)}
             onChange={(d: Date | null) => update({ startDate: dateToYmd(d) })}
@@ -290,8 +286,8 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
           />
         </Box>
 
-        <Box gridColumn={{ base: '1/-1', md: 'span 3' }}>
-          <Text fontSize="sm" fontWeight="medium">Date de fin</Text>
+        <Box gridColumn={gc('span 3')}>
+          <Text fontSize="sm" fontWeight="medium" mb="xs">Date de fin</Text>
           <DatePicker
             selected={ymdToDate(value.endDate)}
             onChange={(d: Date | null) => update({ endDate: dateToYmd(d) })}

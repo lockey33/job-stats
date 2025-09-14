@@ -33,9 +33,9 @@ export function useTopSkills(filters: Partial<JobFilters>) {
   });
 }
 
-export function useEmerging(filters: Partial<JobFilters>) {
+export function useEmerging(filters: Partial<JobFilters>, topK = 10, monthsWindow = 12, minTotalCount = 5) {
   return useQuery({
-    queryKey: queryKeys.emerging({ monthsWindow: 12, topK: 10, minTotalCount: 5, ...filters }),
-    queryFn: () => fetchEmergingSkills(filters, 12, 10, 5),
+    queryKey: queryKeys.emerging({ monthsWindow, topK, minTotalCount, ...filters }),
+    queryFn: () => fetchEmergingSkills(filters, monthsWindow, topK, minTotalCount),
   });
 }

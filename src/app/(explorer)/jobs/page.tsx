@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import SearchBar from '@/components/molecules/SearchBar/SearchBar';
-import FilterPanel from '@/components/organisms/FilterPanel/FilterPanel';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ResultsTable from '@/components/organisms/ResultsTable/ResultsTable';
 import Pagination from '@/components/molecules/Pagination/Pagination';
 import dynamic from 'next/dynamic';
 import SkillSeriesControl from '@/components/molecules/SkillSeriesControl/SkillSeriesControl';
-import JobDetailsModal from '@/components/organisms/JobDetailsModal/JobDetailsModal';
+import JobDetailsDrawer from '@/components/organisms/JobDetailsDrawer/JobDetailsDrawer';
 import SavedSearches from '@/components/organisms/SavedSearches/SavedSearches';
 import ResultsToolbar from '@/components/molecules/ResultsToolbar/ResultsToolbar';
 import AppliedFiltersChips from '@/components/molecules/AppliedFiltersChips/AppliedFiltersChips';
@@ -18,7 +16,8 @@ const Charts = dynamic(() => import('@/components/organisms/Charts/Charts'), { s
 const TopSkillsBarChart = dynamic(() => import('@/components/organisms/TopSkillsBarChart/TopSkillsBarChart'), { ssr: false });
 const EmergingSkillsChart = dynamic(() => import('@/components/organisms/EmergingSkillsChart/EmergingSkillsChart'), { ssr: false });
 const CitySkillTrendView = dynamic(() => import('@/components/organisms/CitySkillTrendView/CitySkillTrendView'), { ssr: false });
-import { Container, Stack, Heading, Text, Button, Box, Alert, HStack, Link } from '@chakra-ui/react';
+import { Container, Stack, Heading, Text, Button, Box, Alert, Link } from '@chakra-ui/react';
+import { FilterIcon, StarIcon } from '@/components/atoms/Icons/Icons';
 import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay';
 import { downloadExcel, downloadBlob } from '@/shared/utils/export';
 import { fetchJobs } from '@/features/jobs/api/endpoints';
@@ -29,6 +28,9 @@ import { useExplorerState, type FiltersFormValues } from './hooks/useExplorerSta
 import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api';
 import { jobItemToRow } from '@/features/jobs/utils/transformers';
 import { JobItem } from '@/features/jobs/types/types';
+import Section from '@/components/molecules/Section/Section';
+import FilterDrawer from '@/components/organisms/FilterDrawer/FilterDrawer';
+import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls';
 
 export default function JobsPage() {
   const { form, filters, deferredFilters, page, setPage, pageSize, setPageSize, sortKey, setSortKey, sortOrder, setSortOrder } = useExplorerState();
@@ -38,6 +40,7 @@ export default function JobsPage() {
   const [seriesSkills, setSeriesSkills] = useState<string[] | null>(null);
   const [seriesCustom, setSeriesCustom] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [trends, setTrends] = useState<TrendsOptions>({ months: 12, smooth: true, topSkillsLimit: 50, emergingLimit: 10 });
 
   const { reset, setValue } = form;
   const metaQuery = useMeta();
@@ -45,7 +48,7 @@ export default function JobsPage() {
   const jobsQuery = useJobs({ page, pageSize, filters: deferredFilters as Partial<JobFilters> });
   const metricsQuery = useMetrics(deferredFilters as Partial<JobFilters>, seriesCustom ? (seriesSkills ?? undefined) : undefined);
   const topSkillsQuery = useTopSkills(deferredFilters as Partial<JobFilters>);
-  const emergingQuery = useEmerging(deferredFilters as Partial<JobFilters>);
+  const emergingQuery = useEmerging(deferredFilters as Partial<JobFilters>, trends.emergingLimit, 12, 5);
 
   const jobs = jobsQuery.data ?? null;
   const metrics = metricsQuery.data ?? null;
@@ -103,6 +106,30 @@ export default function JobsPage() {
     } finally { setExporting(false); }
   }, [filters]);
 
+  function countActiveFilters(f: Partial<JobFilters> | FiltersFormValues): number {
+    let c = 0;
+    const arr = (v?: unknown) => Array.isArray(v) ? v.length : 0;
+    if ((f as any).q) c++;
+    c += arr((f as any).skills);
+    c += arr((f as any).excludeSkills);
+    c += arr((f as any).excludeTitle);
+    c += arr((f as any).cities);
+    c += arr((f as any).regions);
+    c += arr((f as any).remote);
+    c += arr((f as any).experience);
+    c += arr((f as any).job_slugs);
+    if ((f as any).cityMatch === 'exact') c++;
+    if ((f as any).excludeCities) c++;
+    if ((f as any).excludeRegions) c++;
+    if (typeof (f as any).minTjm === 'number') c++;
+    if (typeof (f as any).maxTjm === 'number') c++;
+    if ((f as any).startDate) c++;
+    if ((f as any).endDate) c++;
+    return c;
+  }
+
+  const activeFiltersCount = useMemo(() => countActiveFilters(filters as JobFilters), [filters]);
+
   return (
     <Container maxW="7xl" py="lg" minH="100vh" position="relative">
       <Link href="#results-section" position="absolute" left="-9999px" _focusVisible={{ left: 'sm', top: 'sm', zIndex: 1000 }}>
@@ -113,19 +140,13 @@ export default function JobsPage() {
         <Text fontSize="sm" color="gray.600">Recherchez et filtrez les offres, et explorez les tendances (skills, TJM) à partir de votre dataset fusionné.</Text>
       </Stack>
 
-      <Box bg="white" rounded="lg" borderWidth="1px" shadow="sm" p="md">
-        <HStack justify="space-between" align="center" mb="sm">
-          <SearchBar value={filters.q} onChange={onSearchChange} />
-          <Button display={{ base: 'inline-flex', md: 'none' }} size="sm" variant="outline" onClick={() => setFiltersOpen(!filtersOpen)}>
-            {filtersOpen ? 'Masquer filtres' : 'Filtres'}
-          </Button>
-        </HStack>
-        <Box display={{ base: filtersOpen ? 'block' : 'none', md: 'block' }}>
-          <FilterPanel meta={meta} value={filters as unknown as JobFilters} onChange={onFiltersChange} />
-        </Box>
-        {showSaved && (<SavedSearches currentFilters={filters} onApply={(f) => onFiltersChange(f)} />)}
-        <AppliedFiltersChips value={filters} onChange={onFiltersChange} onClearAll={onClearAllFilters} />
-      </Box>
+      <FilterDrawer
+        isOpen={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        meta={meta}
+        filters={filters as unknown as JobFilters}
+        onChange={onFiltersChange}
+      />
 
       <Stack gap="md" mb="lg">
         {jobsQuery.isLoading && !jobs && (<ResultsSkeleton />)}
@@ -140,22 +161,47 @@ export default function JobsPage() {
           </Alert.Root>
         )}
         {!jobsQuery.isLoading && !jobsQuery.isError && jobs && jobs.total > 0 && (
-          <Box position="relative">
+          <Section>
             {jobsQuery.isFetching && <LoadingOverlay text="Mise à jour des résultats…" />}
             <Box id="results-section" />
-            <ResultsToolbar total={jobs.total} exporting={exporting} onExportCurrentPage={onExportCurrentPage} onExportAllFiltered={onExportAllFiltered}
-              rightSlot={<Button size="sm" variant="outline" onClick={() => setShowSaved(!showSaved)}>{showSaved ? 'Masquer « Sauver »' : 'Sauver cette recherche'}</Button>}
-            />
+            <AppliedFiltersChips value={filters} onChange={onFiltersChange} onClearAll={onClearAllFilters} />
+            <Box position="sticky" top="0" zIndex={5} bg="surface" borderBottomWidth="1px" borderColor="border" py="xs">
+              <ResultsToolbar
+                total={jobs.total}
+                exporting={exporting}
+                onExportCurrentPage={onExportCurrentPage}
+                onExportAllFiltered={onExportAllFiltered}
+                leftSlot={
+                  <Button size="md" variant="outline" colorPalette="brand" onClick={() => setFiltersOpen(true)}>
+                    <FilterIcon boxSize="1.25em"  />
+                    {activeFiltersCount > 0 ? `Filtrer (${activeFiltersCount})` : 'Filtrer'}
+                  </Button>
+                }
+                rightSlot={
+                  <Button size="md" variant="outline" onClick={() => setShowSaved(!showSaved)}>
+                    <StarIcon boxSize="1.25em"  />
+                    {showSaved ? 'Masquer « Sauver »' : 'Sauver cette recherche'}
+                  </Button>
+                }
+              />
+            </Box>
+            {showSaved && (
+              <Box mt="sm">
+                <SavedSearches currentFilters={filters} onApply={(f) => onFiltersChange(f)} />
+              </Box>
+            )}
             <ResultsTable items={jobs.items} sortKey={sortKey} sortOrder={sortOrder} onSortChange={onSortChange} onSelect={(it) => setSelectedJob(it)} />
             <Pagination page={jobs.page} pageSize={jobs.pageSize} pageCount={jobs.pageCount} total={jobs.total} onPageChange={onPageChange} pageSizeOptions={[10, 20, 50]} onPageSizeChange={onPageSizeChange} />
-          </Box>
+          </Section>
         )}
         {!jobsQuery.isLoading && !jobsQuery.isError && jobs && jobs.total === 0 && (
-          <Box textAlign="center" color="gray.700" py="lg" borderWidth="1px" rounded="lg">
-            <Text fontWeight="medium" mb="xs">Aucun résultat</Text>
-            <Text fontSize="sm" color="gray.600" mb="sm">Essayez d’assouplir ou de réinitialiser vos filtres.</Text>
-            <Button size="sm" onClick={onClearAllFilters} variant="outline" colorPalette="brand">Réinitialiser les filtres</Button>
-          </Box>
+          <Section actions={<Button size="sm" variant="outline" colorPalette="brand" onClick={() => setFiltersOpen(true)}>{activeFiltersCount > 0 ? `Filtrer (${activeFiltersCount})` : 'Filtrer'}</Button>}>
+            <Box textAlign="center" color="gray.700" py="lg">
+              <Text fontWeight="medium" mb="xs">Aucun résultat</Text>
+              <Text fontSize="sm" color="gray.600" mb="sm">Essayez d’assouplir ou de réinitialiser vos filtres.</Text>
+              <Button size="sm" onClick={onClearAllFilters} variant="outline" colorPalette="brand">Réinitialiser les filtres</Button>
+            </Box>
+          </Section>
         )}
       </Stack>
 
@@ -163,7 +209,7 @@ export default function JobsPage() {
         {metricsQuery.isLoading && topSkillsQuery.isLoading && emergingQuery.isLoading ? (
           <ChartsSkeleton />
         ) : (
-          <Box position="relative">
+          <Section title="Tendances" subtitle="Volume d’offres, TJM moyen et tendances des skills">
             {(metricsQuery.isFetching || topSkillsQuery.isFetching || emergingQuery.isFetching) && (
               <LoadingOverlay text="Mise à jour des graphiques…" />
             )}
@@ -181,45 +227,71 @@ export default function JobsPage() {
                 </Alert.Content>
               </Alert.Root>
             )}
-            {meta && (
-              <SkillSeriesControl
-                options={meta.skills}
-                value={seriesSkills ?? []}
-                onChange={(next) => {
-                  setSeriesSkills(next);
-                  const tops = metrics?.topSkills ?? [];
-                  const isTopReset = next.length === tops.length && next.every((v, i) => v === tops[i]);
-                  setSeriesCustom(!isTopReset);
-                }}
-                topSkills={metrics?.topSkills}
-                autoEnabled={!seriesCustom}
-                onToggleAuto={(auto) => {
-                  setSeriesCustom(!auto);
-                  if (auto && metrics) {
-                    setSeriesSkills(metrics.seriesSkills);
-                  }
-                }}
-                onPresetTop={(count) => {
-                  const tops = metrics?.topSkills ?? [];
-                  if (tops.length > 0) {
-                    setSeriesSkills(tops.slice(0, Math.min(count, tops.length)));
-                    setSeriesCustom(true);
-                  }
-                }}
-              />
-            )}
-            <Charts metrics={metrics} />
-            <TopSkillsBarChart data={topSkills50 ?? null} />
-            <EmergingSkillsChart payload={emerging ?? null} />
-          </Box>
+            <Stack gap="md">
+              {meta && (
+                <SkillSeriesControl
+                  options={meta.skills}
+                  value={seriesSkills ?? []}
+                  onChange={(next) => {
+                    setSeriesSkills(next);
+                    const tops = metrics?.topSkills ?? [];
+                    const isTopReset = next.length === tops.length && next.every((v, i) => v === tops[i]);
+                    setSeriesCustom(!isTopReset);
+                  }}
+                  topSkills={metrics?.topSkills}
+                  autoEnabled={!seriesCustom}
+                  onToggleAuto={(auto) => {
+                    setSeriesCustom(!auto);
+                    if (auto && metrics) {
+                      setSeriesSkills(metrics.seriesSkills);
+                    }
+                  }}
+                />
+              )}
+
+              <Box display="flex" justifyContent="flex-end" alignItems="center" gap="xs">
+                <Text fontSize="sm" color="textMuted">Période</Text>
+                {[6, 12, 24].map((m) => (
+                  <Button key={m} size="xs" variant={trends.months === (m as 6 | 12 | 24) ? 'solid' : 'outline'} onClick={() => setTrends({ ...trends, months: m as 6 | 12 | 24 })}>
+                    {m} mois
+                  </Button>
+                ))}
+              </Box>
+              <Charts metrics={metrics} months={trends.months} mode="basics" />
+
+              <Charts metrics={metrics} months={trends.months} mode="skills" />
+
+              <Box display="flex" justifyContent="flex-end" alignItems="center" gap="xs">
+                <Text fontSize="sm" color="textMuted">Top skills</Text>
+                {[10, 25, 50].map((n) => (
+                  <Button key={n} size="xs" variant={trends.topSkillsLimit === (n as 10 | 25 | 50) ? 'solid' : 'outline'} onClick={() => setTrends({ ...trends, topSkillsLimit: n as 10 | 25 | 50 })}>
+                    {n}
+                  </Button>
+                ))}
+              </Box>
+              <TopSkillsBarChart data={topSkills50 ?? null} maxItems={trends.topSkillsLimit} />
+
+              <Box display="flex" justifyContent="flex-end" alignItems="center" gap="xs">
+                <Text fontSize="sm" color="textMuted">Émergentes</Text>
+                {[5, 10, 15].map((n) => (
+                  <Button key={n} size="xs" variant={trends.emergingLimit === (n as 5 | 10 | 15) ? 'solid' : 'outline'} onClick={() => setTrends({ ...trends, emergingLimit: n as 5 | 10 | 15 })}>
+                    Top {n}
+                  </Button>
+                ))}
+              </Box>
+              <EmergingSkillsChart payload={emerging ?? null} limit={trends.emergingLimit} />
+            </Stack>
+          </Section>
         )}
       </Stack>
 
       <Stack gap="md">
-        <CitySkillTrendView filters={filters as JobFilters} meta={meta} defaultSkill={metrics?.topSkills?.[0]} />
+        <Section title="Comparaison par ville" subtitle="Évolution mensuelle d’un skill par ville">
+          <CitySkillTrendView filters={filters as JobFilters} meta={meta} defaultSkill={metrics?.topSkills?.[0]} />
+        </Section>
       </Stack>
 
-      <JobDetailsModal job={selectedJob} onClose={() => setSelectedJob(null)} />
+      <JobDetailsDrawer job={selectedJob} onClose={() => setSelectedJob(null)} />
     </Container>
   );
 }

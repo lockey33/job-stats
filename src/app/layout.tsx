@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "react-datepicker/dist/react-datepicker.css";
 import Providers from "./providers";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 
 export const metadata: Metadata = {
   title: {
@@ -33,11 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
+    <html lang="fr" className={`light ${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         <meta name="emotion-insertion-point" content="" />
       </head>
-      <body className={`antialiased`}>
+      <body className={`antialiased`} style={{ background: '#f8fafc' }}>
         <Providers>
           {children}
         </Providers>

@@ -8,7 +8,7 @@ export default function ResultsSkeleton() {
       <SkeletonText noOfLines={1} mt="0" mb="sm" />
       <Box borderTopWidth="1px" borderColor="neutral.200" rounded="lg" overflow="hidden">
         {/* Header row skeleton */}
-        <Box display="grid" gridTemplateColumns="2fr 1fr 1fr 1fr 1fr 2fr 1fr" bg="gray.50" px="md" py="sm" gap="md">
+        <Box display="grid" gridTemplateColumns="2fr 1fr 1fr 1fr 1fr 2fr 1fr" bg="neutral.50" px="md" py="sm" gap="md">
           {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} height="16px" />
           ))}
@@ -25,4 +25,3 @@ export default function ResultsSkeleton() {
     </Box>
   );
 }
-

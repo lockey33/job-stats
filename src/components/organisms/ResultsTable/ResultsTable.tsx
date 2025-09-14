@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { JobItem } from '@/features/jobs/types/types';
 import { Box, Text, Table } from '@chakra-ui/react';
+import { format } from 'date-fns';
 import TagsList from '@/components/atoms/TagsList/TagsList';
 
 type SortKey = 'title' | 'company' | 'city' | 'experience' | 'tjm' | 'date';
@@ -51,6 +52,31 @@ function sortItems(items: JobItem[], key?: SortKey, order: 'asc' | 'desc' = 'asc
   return copy;
 }
 
+function formatDate(input?: string | null): string {
+  if (!input) return '—';
+  const d = new Date(input);
+  if (isNaN(d.getTime())) return '—';
+  try {
+    return format(d, 'dd/MM/yyyy');
+  } catch {
+    return '—';
+  }
+}
+
+function formatExperience(exp?: string | null): string {
+  const v = (exp || '').toString().toLowerCase();
+  switch (v) {
+    case 'junior':
+      return 'Junior';
+    case 'intermediate':
+      return 'Confirmé';
+    case 'senior':
+      return 'Senior';
+    default:
+      return exp || '—';
+  }
+}
+
 function SortHeader({
   label,
   active,
@@ -76,7 +102,7 @@ export default function ResultsTable({ items, sortKey, sortOrder = 'asc', onSort
     <Box w="full">
       <Box overflowX="auto" rounded="lg" borderWidth="0px" bg="transparent" shadow="none" borderTopWidth="1px" borderColor="neutral.200">
         <Table.Root size="sm">
-          <Table.Header bg="gray.50" position="sticky" top={0} zIndex={1}>
+          <Table.Header bg="neutral.50" position="sticky" top={0} zIndex={1}>
             <Table.Row>
               <Table.ColumnHeader aria-sort={ariaSort('title')}>
                 <SortHeader
@@ -145,7 +171,8 @@ export default function ResultsTable({ items, sortKey, sortOrder = 'asc', onSort
                 tabIndex={0}
                 aria-label={`Voir le détail: ${(it.title ?? it.slug ?? it.job_slug ?? 'offre').toString()}`}
                 title="Afficher le détail"
-                _hover={{ bg: 'gray.50' }}
+                _hover={{ bg: 'neutral.50' }}
+                _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '2px' }}
               >
                 <Table.Cell>
                   <Text as="span" fontWeight="medium" display="inline-block" maxW="48ch" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">
@@ -164,7 +191,7 @@ export default function ResultsTable({ items, sortKey, sortOrder = 'asc', onSort
                 </Table.Cell>
                 <Table.Cell>
                   <Text as="span" display="inline-block" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">
-                    {it.experience ?? '—'}
+                    {formatExperience(it.experience)}
                   </Text>
                 </Table.Cell>
                 <Table.Cell>
@@ -180,7 +207,7 @@ export default function ResultsTable({ items, sortKey, sortOrder = 'asc', onSort
                 <Table.Cell>
                   <TagsList items={(it.skills ?? []).slice(0, 6)} colorPalette="brand" />
                 </Table.Cell>
-                <Table.Cell>{it.created_at?.slice(0, 10) ?? '—'}</Table.Cell>
+                <Table.Cell>{formatDate(it.created_at)}</Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
