@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { JobFilters } from "@/lib/domain/types";
-import { toQueryString } from "@/lib/utils/filters";
+import { JobFilters } from "@/features/jobs/types/types";
+import { toQueryString } from "@/shared/utils/searchParams";
 import { Box, Input, Button, Tag, Text } from "@chakra-ui/react";
 
 const STORAGE_KEY = "job-stats:saved-searches:v1";
@@ -122,4 +122,3 @@ export default function SavedSearches({ currentFilters, onApply, className }: Pr
     </Box>
   );
 }
-

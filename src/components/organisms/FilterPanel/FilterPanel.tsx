@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { JobFilters, MetaFacets } from '@/lib/domain/types';
+import { JobFilters, MetaFacets } from '@/features/jobs/types/types';
 import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect';
 import ChipsInput from '@/components/molecules/ChipsInput/ChipsInput';
 import DatePicker from 'react-datepicker';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Box, Text, Input, HStack, Checkbox, Grid, Button } from '@chakra-ui/react';
+import type { CheckboxCheckedChangeDetails } from '@chakra-ui/react';
 import ChakraDateInput from '@/components/atoms/ChakraDateInput/ChakraDateInput';
+import { normCity } from '@/shared/utils/normalize';
 
 export interface FilterPanelProps {
   meta: MetaFacets | null;
@@ -24,18 +26,12 @@ function parseCSV(input: string): string[] {
 }
 
 export default function FilterPanel({ meta, value, onChange }: FilterPanelProps) {
-  const [skillsText, setSkillsText] = useState<string>((value.skills ?? []).join(', '));
-  
-  const [citiesText, setCitiesText] = useState<string>((value.cities ?? []).join(', '));
   const [jobSlugsText, setJobSlugsText] = useState<string>((value.job_slugs ?? []).join(', '));
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    setSkillsText((value.skills ?? []).join(', '));
-    
-    setCitiesText((value.cities ?? []).join(', '));
     setJobSlugsText((value.job_slugs ?? []).join(', '));
-  }, [value.skills, value.cities, value.job_slugs]);
+  }, [value.job_slugs]);
 
   const remoteOptions = useMemo(() => meta?.remote ?? ['full', 'partial', 'none'], [meta]);
   const expOptions = useMemo(() => meta?.experience ?? ['junior', 'intermediate', 'senior'], [meta]);
@@ -123,13 +119,13 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             value={value.cities ?? []}
             onChange={(cities) => update({ cities })}
             placeholder="Tapez pour rechercher une ville..."
-            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
+            normalize={normCity}
             dedupeByNormalized={false}
           />
           <HStack pt="xs" gap="sm" align="center">
             <Checkbox.Root
               checked={(value.cityMatch ?? 'contains') === 'exact'}
-              onCheckedChange={(d: any) => update({ cityMatch: d.checked ? 'exact' : 'contains' })}
+              onCheckedChange={(d: CheckboxCheckedChangeDetails) => update({ cityMatch: d.checked ? 'exact' : 'contains' })}
             >
               <Checkbox.HiddenInput />
               <Checkbox.Control>
@@ -141,7 +137,7 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             </Checkbox.Root>
             <Checkbox.Root
               checked={!!value.excludeCities}
-              onCheckedChange={(d: any) => update({ excludeCities: !!d.checked })}
+              onCheckedChange={(d: CheckboxCheckedChangeDetails) => update({ excludeCities: !!d.checked })}
             >
               <Checkbox.HiddenInput />
               <Checkbox.Control>
@@ -161,13 +157,12 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             value={value.regions ?? []}
             onChange={(regions) => update({ regions })}
             placeholder="Tapez pour rechercher une région..."
-            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
             dedupeByNormalized={false}
           />
           <HStack pt="xs" gap="md" align="center">
             <Checkbox.Root
               checked={!!value.excludeRegions}
-              onCheckedChange={(d: any) => update({ excludeRegions: !!d.checked })}
+              onCheckedChange={(d: CheckboxCheckedChangeDetails) => update({ excludeRegions: !!d.checked })}
             >
               <Checkbox.HiddenInput />
               <Checkbox.Control>
@@ -205,7 +200,7 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             {remoteOptions.map((r) => {
               const checked = (value.remote ?? []).includes(r);
               return (
-                <Checkbox.Root key={r} checked={checked} onCheckedChange={(d: any) => {
+                <Checkbox.Root key={r} checked={checked} onCheckedChange={(d: CheckboxCheckedChangeDetails) => {
                   const cur = new Set(value.remote ?? []);
                   if (d.checked) cur.add(r); else cur.delete(r);
                   update({ remote: Array.from(cur) });
@@ -229,7 +224,7 @@ export default function FilterPanel({ meta, value, onChange }: FilterPanelProps)
             {expOptions.map((exp) => {
               const checked = (value.experience ?? []).includes(exp);
               return (
-                <Checkbox.Root key={exp} checked={checked} onCheckedChange={(d: any) => {
+                <Checkbox.Root key={exp} checked={checked} onCheckedChange={(d: CheckboxCheckedChangeDetails) => {
                   const cur = new Set(value.experience ?? []);
                   if (d.checked) cur.add(exp); else cur.delete(exp);
                   update({ experience: Array.from(cur) });

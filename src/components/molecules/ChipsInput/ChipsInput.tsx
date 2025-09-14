@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Input } from "@chakra-ui/react";
 import CloseableTag from "@/components/atoms/CloseableTag/CloseableTag";
 
@@ -21,7 +21,7 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
 
   const normSet = useMemo(() => new Set(value.map(norm)), [value]);
 
-  function addChip(raw: string) {
+  const addChip = useCallback((raw: string) => {
     const n = norm(raw);
     if (!n) return;
     if (normSet.has(n)) {
@@ -30,7 +30,7 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
     }
     onChange([...value, raw.trim()]);
     setInput("");
-  }
+  }, [normSet, onChange, value]);
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
@@ -43,10 +43,10 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
     }
   }
 
-  function removeChip(s: string) {
+  const removeChip = useCallback((s: string) => {
     const n = norm(s);
     onChange(value.filter((v) => norm(v) !== n));
-  }
+  }, [onChange, value]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -57,7 +57,7 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
     }
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
-  }, [input, addOnBlur]);
+  }, [input, addOnBlur, addChip]);
 
   return (
     <Box ref={containerRef} w="full">
@@ -79,4 +79,3 @@ export default function ChipsInput({ value, onChange, placeholder = "Ajouter…"
     </Box>
   );
 }
-

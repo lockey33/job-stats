@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
-import { getAllJobs } from '@/lib/infrastructure/repository';
-import { applyFilters, paginate, dedupeById } from '@/lib/application/filtering';
-import { parseFiltersFromSearchParams } from '@/lib/utils/filters';
+import { getAllJobs } from '@/server/jobs/repository';
+import { applyFilters, paginate, dedupeById } from '@/features/jobs/utils/filtering';
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,8 +19,9 @@ export async function GET(req: NextRequest) {
     const sorted = unique.slice().sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
     const result = paginate(sorted, { page, pageSize });
 
-    return Response.json(result, { status: 200 });
-  } catch (e: any) {
-    return Response.json({ error: e?.message ?? 'Unknown error' }, { status: 500 });
+    return Response.json(result, { status: 200, headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } });
+  } catch (e: unknown) {
+    console.error('[api/jobs] error:', e);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

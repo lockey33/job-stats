@@ -20,6 +20,41 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Data
+
+- The application reads a merged dataset from `var/data/merged.json` (not public).
+- To refresh or build it locally, run:
+
+```bash
+pnpm run update:data        # fetch new data and rebuild var/data/merged.json
+pnpm run update:data:dry    # dry‑run plan (no writes)
+pnpm run update:data:oldest # pivot from oldest date
+```
+
+The previous `public/merged.json` path is no longer used (file is not exposed publicly).
+
+## Export limits
+
+- API route `/api/export` streams CSV for large exports to reduce memory usage.
+- XLSX export is allowed up to a configurable limit (default 50,000 rows).
+  - Configure with `EXPORT_XLSX_LIMIT` env var (min 1,000, max 250,000).
+
+## Admin: cache refresh
+
+Expose a simple admin endpoint to clear in-memory caches (dataset repo cache, facets cache, analytics caches):
+
+- Set an environment variable `ADMIN_SECRET`.
+- Call `POST /api/admin/cache/refresh` with header `x-admin-secret: <ADMIN_SECRET>`.
+- Optional query `?warm=true` will precompute facets after clearing.
+
+Example (curl):
+
+```bash
+curl -X POST \
+  -H "x-admin-secret: $ADMIN_SECRET" \
+  "http://localhost:3000/api/admin/cache/refresh?warm=true"
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,9 +1,0 @@
-export { default as SearchBar } from './SearchBar/SearchBar';
-export { default as ChipsInput } from './ChipsInput/ChipsInput';
-export { default as MultiSelect } from './MultiSelect/MultiSelect';
-export { default as Autocomplete } from './Autocomplete/Autocomplete';
-export { default as AppliedFiltersChips } from './AppliedFiltersChips/AppliedFiltersChips';
-export { default as Pagination } from './Pagination/Pagination';
-export { default as ResultsToolbar } from './ResultsToolbar/ResultsToolbar';
-export { default as SkillSeriesControl } from './SkillSeriesControl/SkillSeriesControl';
-export { default as RemovableChipsBar } from './RemovableChipsBar/RemovableChipsBar';

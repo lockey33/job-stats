@@ -20,6 +20,21 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  // Forbid importing server-only modules in client components
+  {
+    files: ["src/components/**/*.{ts,tsx}", "src/app/**/*.{ts,tsx}"],
+    ignores: ["src/app/api/**", "src/app/**/route.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "@/server/*",
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

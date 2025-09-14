@@ -1,5 +1,6 @@
+// Tailwind removed: keep PostCSS config empty to avoid missing plugin errors
 const config = {
-  plugins: ["@tailwindcss/postcss"],
+  plugins: [],
 };
 
 export default config;

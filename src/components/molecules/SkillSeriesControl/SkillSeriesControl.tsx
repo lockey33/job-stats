@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Button, Checkbox, HStack, Text } from "@chakra-ui/react";
+import type { CheckboxCheckedChangeDetails } from "@chakra-ui/react";
 import MultiSelect from "@/components/molecules/MultiSelect/MultiSelect";
 
 interface Props {
@@ -50,6 +51,15 @@ export default function SkillSeriesControl({ options, value, onChange, topSkills
             Top 10
           </Button>
           <Button
+            onClick={() => onPresetTop?.(50)}
+            variant="outline"
+            size="sm"
+            disabled={!topSkills || topSkills.length === 0}
+            title="Utiliser le Top 50 actuel"
+          >
+            Top 50
+          </Button>
+          <Button
             onClick={resetTop}
             variant="ghost"
             size="sm"
@@ -60,7 +70,7 @@ export default function SkillSeriesControl({ options, value, onChange, topSkills
           </Button>
           <Checkbox.Root
             checked={!!autoEnabled}
-            onCheckedChange={(detail: any) => onToggleAuto?.(!!detail.checked)}
+            onCheckedChange={(detail: CheckboxCheckedChangeDetails) => onToggleAuto?.(!!detail.checked)}
             aria-label="Suivre automatiquement le Top 10"
           >
             <Checkbox.HiddenInput />

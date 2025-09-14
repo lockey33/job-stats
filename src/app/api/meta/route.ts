@@ -1,15 +1,14 @@
-import { NextRequest } from 'next/server';
-import { getAllJobs } from '@/lib/infrastructure/repository';
-import { computeFacets } from '@/lib/application/filtering';
+import { getMetaFacets } from '@/server/jobs/facets';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
-    const jobs = await getAllJobs();
-    const facets = computeFacets(jobs);
-    return Response.json(facets, { status: 200 });
-  } catch (e: any) {
-    return Response.json({ error: e?.message ?? 'Unknown error' }, { status: 500 });
+    const facets = await getMetaFacets();
+    return Response.json(facets, { status: 200, headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } });
+  } catch (e: unknown) {
+    console.error('[api/meta] error:', e);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

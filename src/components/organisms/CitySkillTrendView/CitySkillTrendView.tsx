@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { JobFilters, MetaFacets } from "@/lib/domain/types";
-import { fetchCitySkillTrend } from "@/lib/utils/api";
+import { JobFilters, MetaFacets } from "@/features/jobs/types/types";
+import { fetchCitySkillTrend } from "@/features/jobs/api/endpoints";
 import Autocomplete from "@/components/molecules/Autocomplete/Autocomplete";
 import MultiSelect from "@/components/molecules/MultiSelect/MultiSelect";
+import { normCity } from "@/shared/utils/normalize";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, Legend } from "recharts";
 import { Box, Text, Input, Checkbox, Alert } from "@chakra-ui/react";
+import type { CheckboxCheckedChangeDetails } from "@chakra-ui/react";
 
 const COLORS = [
   '#2563eb', '#16a34a', '#dc2626', '#7c3aed', '#ea580c', '#0ea5e9', '#22c55e', '#e11d48', '#a855f7', '#f59e0b', '#14b8a6', '#9333ea'
@@ -27,8 +29,9 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [months, setMonths] = useState<string[]>([]);
-  const [seriesSkills, setSeriesCities] = useState<string[]>([]);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [seriesCities, setSeriesCities] = useState<string[]>([]);
+  type CityChartDatum = { month: string } & Record<string, number>;
+  const [chartData, setChartData] = useState<CityChartDatum[]>([]);
   const [hiddenCities, setHiddenCities] = useState<string[]>([]);
 
   // Auto-fill default skill once when analytics suggested one
@@ -55,19 +58,19 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       );
       // Transform into recharts format: [{month, CityA: n, CityB: m, ...}, ...]
       const cities = Object.keys(payload.citySeries);
-      const map: Record<string, any> = {};
+      const map: Record<string, CityChartDatum> = {};
       for (const city of cities) {
         for (const pt of payload.citySeries[city]) {
-          if (!map[pt.month]) map[pt.month] = { month: pt.month };
+          if (!map[pt.month]) map[pt.month] = { month: pt.month } as CityChartDatum;
           map[pt.month][city] = pt.value;
         }
       }
-      const data = Object.values(map).sort((a: any, b: any) => String(a.month).localeCompare(String(b.month)));
+      const data = Object.values(map).sort((a, b) => String(a.month).localeCompare(String(b.month)));
       setMonths(payload.months);
       setSeriesCities(cities);
       setChartData(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Erreur inconnue");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
     } finally {
       setLoading(false);
     }
@@ -81,21 +84,20 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
 
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    seriesSkills.forEach((city, idx) => {
+    seriesCities.forEach((city, idx) => {
       map[city] = COLORS[idx % COLORS.length];
     });
     return map;
-  }, [seriesSkills]);
+  }, [seriesCities]);
 
   function toggleCityVisibility(city: string) {
     setHiddenCities((prev) => (prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]));
   }
 
-  function CustomLegend({ payload }: any) {
-    if (!payload) return null;
+  function CustomLegend() {
     return (
       <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
-        {seriesSkills.map((city) => {
+        {seriesCities.map((city) => {
           const color = colorMap[city];
           const hidden = hiddenCities.includes(city);
           return (
@@ -130,7 +132,8 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
     );
   }
 
-  function CustomTooltip({ active, payload, label }: any) {
+  type TooltipEntry = { name: string; value: number; color?: string };
+  function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string }) {
     if (!active || !payload || payload.length === 0) return null;
     const prevIdx = months.findIndex((m) => m === label) - 1;
     const prevMonth = prevIdx >= 0 ? months[prevIdx] : null;
@@ -138,7 +141,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">{label}</Text>
-        {payload.map((entry: any, idx: number) => {
+        {payload.map((entry: TooltipEntry, idx: number) => {
           const city = entry.name;
           const val = entry.value as number;
           const prevVal = prev ? (prev[city] ?? null) : null;
@@ -183,11 +186,11 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
             value={selectedCities}
             onChange={setSelectedCities}
             placeholder="Ajouter des villes précises (sinon Top N villes)"
-            normalize={(s) => s.toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()}
+            normalize={normCity}
             dedupeByNormalized={false}
           />
           <Box display="flex" alignItems="center" gap="md" mt="sm" fontSize="xs">
-            <Checkbox.Root checked={useSelectedCities} onCheckedChange={(d: any) => setUseSelectedCities(!!d.checked)}>
+            <Checkbox.Root checked={useSelectedCities} onCheckedChange={(d: CheckboxCheckedChangeDetails) => setUseSelectedCities(!!d.checked)}>
               <Checkbox.HiddenInput />
               <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
               <Checkbox.Label>Utiliser uniquement ces villes</Checkbox.Label>
@@ -230,7 +233,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
                 <YAxis allowDecimals={false} />
                 <ReTooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />
-                {seriesSkills.filter((c) => !hiddenCities.includes(c)).map((city) => (
+                {seriesCities.filter((c) => !hiddenCities.includes(c)).map((city) => (
                   <Line key={city} type="monotone" dataKey={city} stroke={colorMap[city]} strokeWidth={2} dot={false} />
                 ))}
               </LineChart>

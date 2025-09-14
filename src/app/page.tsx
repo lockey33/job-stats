@@ -1,5 +1,5 @@
-import HomeClient from "./HomeClient";
+import JobsPage from './(explorer)/jobs/page';
 
 export default function Home() {
-  return <HomeClient />;
+  return <JobsPage />;
 }

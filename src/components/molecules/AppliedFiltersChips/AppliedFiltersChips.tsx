@@ -1,6 +1,6 @@
 "use client";
 
-import { JobFilters } from "@/lib/domain/types";
+import { JobFilters } from "@/features/jobs/types/types";
 import RemovableChipsBar, { ChipItem } from "@/components/molecules/RemovableChipsBar/RemovableChipsBar";
 
 interface Props {
