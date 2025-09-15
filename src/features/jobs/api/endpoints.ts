@@ -1,13 +1,22 @@
-import { apiGet, buildQueryFromFilters } from '@/shared/http/client';
-import { JobsResult, JobFilters, AnalyticsResult, MetaFacets, TopSkill, EmergingSkillTrendPayload } from '@/features/jobs/types/types';
+import { apiGet, buildQueryFromFilters } from '@/shared/http/client'
+import {
+  JobsResult,
+  JobFilters,
+  AnalyticsResult,
+  MetaFacets,
+  TopSkill,
+  EmergingSkillTrendPayload,
+} from '@/features/jobs/types/types'
 
-export async function fetchJobs(filters: Partial<JobFilters & { page: number; pageSize: number }>): Promise<JobsResult> {
-  const query = buildQueryFromFilters(filters);
-  return apiGet('/api/jobs', query);
+export async function fetchJobs(
+  filters: Partial<JobFilters & { page: number; pageSize: number }>,
+): Promise<JobsResult> {
+  const query = buildQueryFromFilters(filters)
+  return apiGet('/api/jobs', query)
 }
 
 export async function fetchMeta(): Promise<MetaFacets> {
-  return apiGet('/api/meta');
+  return apiGet('/api/meta')
 }
 
 export async function fetchMetrics(
@@ -18,23 +27,23 @@ export async function fetchMetrics(
   const query = buildQueryFromFilters(filters, {
     seriesSkills: seriesSkills && seriesSkills.length > 0 ? seriesSkills.join(',') : undefined,
     topSkillsCount,
-  });
-  return apiGet('/api/metrics', query);
+  })
+  return apiGet('/api/metrics', query)
 }
 
 export async function fetchTopSkills(
   filters: Partial<JobFilters> = {},
   count = 50,
 ): Promise<TopSkill[]> {
-  const query = buildQueryFromFilters(filters, { count });
-  const data = await apiGet<{ topSkills: TopSkill[] }>('/api/metrics/top-skills', query);
-  return data.topSkills;
+  const query = buildQueryFromFilters(filters, { count })
+  const data = await apiGet<{ topSkills: TopSkill[] }>('/api/metrics/top-skills', query)
+  return data.topSkills
 }
 
 export interface CitySkillTrendPayload {
-  months: string[];
-  citySeries: Record<string, { month: string; value: number }[]>;
-  topCities: string[];
+  months: string[]
+  citySeries: Record<string, { month: string; value: number }[]>
+  topCities: string[]
 }
 
 export async function fetchEmergingSkills(
@@ -47,8 +56,8 @@ export async function fetchEmergingSkills(
     monthsWindow,
     topK,
     minTotalCount,
-  });
-  return apiGet('/api/metrics/emerging-skills', query);
+  })
+  return apiGet('/api/metrics/emerging-skills', query)
 }
 
 export async function fetchCitySkillTrend(
@@ -61,6 +70,6 @@ export async function fetchCitySkillTrend(
     skill,
     seriesCities: seriesCities && seriesCities.length > 0 ? seriesCities.join(',') : undefined,
     topCityCount,
-  });
-  return apiGet('/api/metrics/city-skill', query);
+  })
+  return apiGet('/api/metrics/city-skill', query)
 }

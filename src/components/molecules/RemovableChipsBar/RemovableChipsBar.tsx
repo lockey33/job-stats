@@ -1,22 +1,26 @@
-"use client";
+'use client'
 
-import { Box, Button, HStack } from "@chakra-ui/react";
-import CloseableTag from "@/components/atoms/CloseableTag/CloseableTag";
+import { Box, Button, HStack } from '@chakra-ui/react'
+import CloseableTag from '@/components/atoms/CloseableTag/CloseableTag'
 
 export interface ChipItem {
-  id: string;
-  label: string;
-  onRemove: () => void;
+  id: string
+  label: string
+  onRemove: () => void
 }
 
 interface Props {
-  items: ChipItem[];
-  onClearAll?: () => void;
-  clearLabel?: string;
+  items: ChipItem[]
+  onClearAll?: () => void
+  clearLabel?: string
 }
 
-export default function RemovableChipsBar({ items, onClearAll, clearLabel = "Tout effacer" }: Props) {
-  if (!items || items.length === 0) return null;
+export default function RemovableChipsBar({
+  items,
+  onClearAll,
+  clearLabel = 'Tout effacer',
+}: Props) {
+  if (!items || items.length === 0) return null
   return (
     <HStack justify="space-between" align="center" wrap="wrap" gap="sm" py="xs">
       <Box display="flex" flexWrap="wrap" gap="sm">
@@ -32,6 +36,5 @@ export default function RemovableChipsBar({ items, onClearAll, clearLabel = "Tou
         </Button>
       )}
     </HStack>
-  );
+  )
 }
-

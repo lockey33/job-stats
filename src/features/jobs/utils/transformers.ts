@@ -1,5 +1,5 @@
-import type { JobItem } from '@/features/jobs/types/types';
-import type { Row } from '@/shared/utils/export';
+import type { JobItem } from '@/features/jobs/types/types'
+import type { Row } from '@/shared/utils/export'
 
 export function jobItemToRow(it: JobItem): Row {
   return {
@@ -15,6 +15,5 @@ export function jobItemToRow(it: JobItem): Row {
     skills: (it.skills ?? []).join(' | '),
     soft_skills: (it.soft_skills ?? []).join(' | '),
     job_slug: it.job_slug ?? '',
-  } as const;
+  } as const
 }
-

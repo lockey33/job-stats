@@ -1,40 +1,55 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { FlatCompat } from '@eslint/eslintrc'
+import unusedImports from 'eslint-plugin-unused-imports'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
-});
+})
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-    ],
+    ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts'],
   },
-  // Forbid importing server-only modules in client components
+  // Global code style and hygiene
   {
-    files: ["src/components/**/*.{ts,tsx}", "src/app/**/*.{ts,tsx}"],
-    ignores: ["src/app/api/**", "src/app/**/route.ts"],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      'unused-imports': unusedImports,
+      'simple-import-sort': simpleImportSort,
+    },
     rules: {
-      "no-restricted-imports": [
-        "error",
+      // No semicolons across the codebase
+      semi: ['error', 'never'],
+      'no-extra-semi': 'error',
+      // Keep imports tidy and avoid unused ones
+      'unused-imports/no-unused-imports': 'error',
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
+    },
+  },
+  // Forbid importing server-only modules in known client-only layers
+  {
+    files: [
+      'src/components/**/*.{ts,tsx}',
+      // Protect feature UI and hooks from server imports
+      'src/features/**/ui/**/*.{ts,tsx}',
+      'src/features/**/hooks/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
         {
-          patterns: [
-            "@/server/*",
-          ],
+          patterns: ['@/server/*'],
         },
       ],
     },
   },
-];
+]
 
-export default eslintConfig;
+export default eslintConfig

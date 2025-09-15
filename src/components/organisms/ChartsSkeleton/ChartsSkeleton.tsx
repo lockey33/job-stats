@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { Box, Skeleton, SkeletonText } from "@chakra-ui/react";
+import { Box, Skeleton, SkeletonText } from '@chakra-ui/react'
 
 export default function ChartsSkeleton() {
   return (
@@ -18,6 +18,5 @@ export default function ChartsSkeleton() {
         <Skeleton height="20rem" rounded="md" />
       </Box>
     </Box>
-  );
+  )
 }
-

@@ -5,14 +5,14 @@
 
 export const DEPT_TO_REGION: Record<string, string> = {
   // Île-de-France
-  '75': "Île-de-France",
-  '77': "Île-de-France",
-  '78': "Île-de-France",
-  '91': "Île-de-France",
-  '92': "Île-de-France",
-  '93': "Île-de-France",
-  '94': "Île-de-France",
-  '95': "Île-de-France",
+  '75': 'Île-de-France',
+  '77': 'Île-de-France',
+  '78': 'Île-de-France',
+  '91': 'Île-de-France',
+  '92': 'Île-de-France',
+  '93': 'Île-de-France',
+  '94': 'Île-de-France',
+  '95': 'Île-de-France',
 
   // Centre-Val de Loire
   '18': 'Centre-Val de Loire',
@@ -138,22 +138,21 @@ export const DEPT_TO_REGION: Record<string, string> = {
   '986': 'Wallis-et-Futuna',
   '987': 'Polynésie française',
   '988': 'Nouvelle-Calédonie',
-};
+}
 
 export function extractDepartmentCodeFromCity(city?: string | null): string | null {
-  if (!city) return null;
-  const m = city.match(/\((\d{2}|2A|2B|97\d|98\d)\)/i);
-  if (!m) return null;
-  const raw = m[1];
-  const up = raw.toUpperCase();
-  if (up.length === 1) return up.padStart(2, '0');
-  if (up.length === 2 && /^\d{1}$/.test(up)) return up.padStart(2, '0');
-  return up;
+  if (!city) return null
+  const m = city.match(/\((\d{2}|2A|2B|97\d|98\d)\)/i)
+  if (!m) return null
+  const raw = m[1]
+  const up = raw.toUpperCase()
+  if (up.length === 1) return up.padStart(2, '0')
+  if (up.length === 2 && /^\d{1}$/.test(up)) return up.padStart(2, '0')
+  return up
 }
 
 export function cityToRegion(city?: string | null): string | null {
-  const dept = extractDepartmentCodeFromCity(city);
-  if (!dept) return null;
-  return DEPT_TO_REGION[dept] ?? null;
+  const dept = extractDepartmentCodeFromCity(city)
+  if (!dept) return null
+  return DEPT_TO_REGION[dept] ?? null
 }
-

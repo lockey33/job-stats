@@ -1,0 +1,291 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import JobDetailsDrawer from '@/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
+const CitySkillTrendView = dynamic(
+  () => import('@/components/organisms/CitySkillTrendView/CitySkillTrendView'),
+  { ssr: false },
+)
+import { Container, Stack, Heading, Text, Button, Link } from '@chakra-ui/react'
+import { fetchJobs } from '@/features/jobs/api/endpoints'
+import { JobFilters } from '@/features/jobs/types/types'
+import { useQueryClient } from '@tanstack/react-query'
+import { useExplorerState, type FiltersFormValues } from './hooks/useExplorerState'
+import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api'
+import { JobItem } from '@/features/jobs/types/types'
+import Section from '@/components/molecules/Section/Section'
+import FilterDrawer from '@/components/organisms/FilterDrawer/FilterDrawer'
+import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
+import JobsResultsSection from '@/features/jobs/ui/JobsResultsSection'
+import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
+import { useExport } from '@/features/jobs/hooks/useExport'
+import { queryKeys } from '@/features/jobs/api/queryKeys'
+
+export default function ClientJobsPage() {
+  const {
+    form,
+    filters,
+    deferredFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    sortKey,
+    setSortKey,
+    sortOrder,
+    setSortOrder,
+  } = useExplorerState()
+  const [selectedJob, setSelectedJob] = useState<JobItem | null>(null)
+  const [showSaved, setShowSaved] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [seriesSkills, setSeriesSkills] = useState<string[] | null>(null)
+  const [seriesCustom, setSeriesCustom] = useState(false)
+  const { exporting, exportCurrentPage, exportAllFiltered } = useExport()
+  const [trends, setTrends] = useState<TrendsOptions>({
+    months: 12,
+    smooth: true,
+    topSkillsLimit: 50,
+    emergingLimit: 10,
+  })
+
+  const { reset, setValue } = form
+  const metaQuery = useMeta()
+  const queryClient = useQueryClient()
+  const jobsQuery = useJobs({ page, pageSize, filters: deferredFilters as Partial<JobFilters> })
+  const metricsQuery = useMetrics(
+    deferredFilters as Partial<JobFilters>,
+    seriesCustom ? (seriesSkills ?? undefined) : undefined,
+  )
+  const topSkillsQuery = useTopSkills(deferredFilters as Partial<JobFilters>)
+  const emergingQuery = useEmerging(
+    deferredFilters as Partial<JobFilters>,
+    trends.emergingLimit,
+    12,
+    5,
+  )
+
+  const jobs = jobsQuery.data ?? null
+  const metrics = metricsQuery.data ?? null
+  const topSkills50 = topSkillsQuery.data ?? null
+  const emerging = emergingQuery.data ?? null
+  const meta = metaQuery.data ?? null
+
+  useEffect(() => {
+    if (metrics && !seriesCustom) {
+      const next = metrics.seriesSkills ?? []
+      const cur = seriesSkills ?? []
+      const same = next.length === cur.length && next.every((v, i) => v === cur[i])
+      if (!same) setSeriesSkills(next)
+    }
+  }, [metrics, seriesCustom, seriesSkills])
+
+  useEffect(() => {
+    if (!jobs) return
+    const promises: Promise<unknown>[] = []
+    if (jobs.page < jobs.pageCount) {
+      const nextFilters = {
+        ...(deferredFilters as Partial<JobFilters>),
+        page: jobs.page + 1,
+        pageSize,
+      }
+      promises.push(
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.jobs(nextFilters),
+          queryFn: () => fetchJobs(nextFilters),
+        }),
+      )
+    }
+    if (jobs.page > 1) {
+      const prevFilters = {
+        ...(deferredFilters as Partial<JobFilters>),
+        page: jobs.page - 1,
+        pageSize,
+      }
+      promises.push(
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.jobs(prevFilters),
+          queryFn: () => fetchJobs(prevFilters),
+        }),
+      )
+    }
+    void Promise.allSettled(promises)
+  }, [jobs, deferredFilters, pageSize, queryClient])
+
+  const onSearchChange = useCallback(
+    (q: string) => {
+      setValue('q', q || undefined, { shouldDirty: true, shouldTouch: false })
+      setPage(1)
+    },
+    [setValue, setPage],
+  )
+  const onFiltersChange = useCallback(
+    (next: FiltersFormValues) => {
+      reset(next)
+      setPage(1)
+    },
+    [reset, setPage],
+  )
+  const onPageChange = useCallback(
+    (p: number) => {
+      setPage(p)
+    },
+    [setPage],
+  )
+  const onPageSizeChange = useCallback(
+    (size: number) => {
+      setPageSize(size)
+      setPage(1)
+    },
+    [setPageSize, setPage],
+  )
+  const onSortChange = useCallback(
+    (key: NonNullable<typeof sortKey>, order: typeof sortOrder) => {
+      setSortKey(key)
+      setSortOrder(order)
+    },
+    [setSortKey, setSortOrder],
+  )
+  const onClearAllFilters = useCallback(() => {
+    reset({})
+    setPage(1)
+  }, [reset, setPage])
+
+  const onExportCurrentPage = useCallback(() => exportCurrentPage(jobs), [exportCurrentPage, jobs])
+  const onExportAllFiltered = useCallback(
+    () => exportAllFiltered(filters as Partial<JobFilters>),
+    [exportAllFiltered, filters],
+  )
+
+  function countActiveFilters(f: Partial<JobFilters> | FiltersFormValues): number {
+    let c = 0
+    const arr = (v?: unknown) => (Array.isArray(v) ? v.length : 0)
+
+    if ((f as any).q) c++
+
+    c += arr((f as any).skills)
+    c += arr((f as any).excludeSkills)
+    c += arr((f as any).excludeTitle)
+    c += arr((f as any).cities)
+    c += arr((f as any).regions)
+    c += arr((f as any).remote)
+    c += arr((f as any).experience)
+    c += arr((f as any).job_slugs)
+
+    if ((f as any).cityMatch === 'exact') c++
+    if ((f as any).excludeCities) c++
+    if ((f as any).excludeRegions) c++
+    if (typeof (f as any).minTjm === 'number') c++
+    if (typeof (f as any).maxTjm === 'number') c++
+    if ((f as any).startDate) c++
+    if ((f as any).endDate) c++
+    return c
+  }
+
+  const activeFiltersCount = useMemo(() => countActiveFilters(filters as JobFilters), [filters])
+
+  return (
+    <Container maxW="7xl" py="lg" minH="100vh" position="relative">
+      <Link
+        href="#results-section"
+        position="absolute"
+        left="-9999px"
+        _focusVisible={{ left: 'sm', top: 'sm', zIndex: 1000 }}
+      >
+        <Button size="xs" variant="outline">
+          Aller aux résultats
+        </Button>
+      </Link>
+      <Stack as="header" gap="xs" mb="md">
+        <Heading size="lg">Job Stats Explorer</Heading>
+        <Text fontSize="sm" color="gray.600">
+          Recherchez et filtrez les offres, et explorez les tendances (skills, TJM) à partir de
+          votre dataset fusionné.
+        </Text>
+      </Stack>
+
+      <FilterDrawer
+        isOpen={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        meta={meta}
+        filters={filters as unknown as JobFilters}
+        onChange={onFiltersChange}
+      />
+
+      <Stack gap="md" mb="lg">
+        <JobsResultsSection
+          jobs={jobs}
+          isLoading={jobsQuery.isLoading}
+          isError={!!jobsQuery.isError}
+          error={jobsQuery.error as unknown}
+          isFetching={jobsQuery.isFetching}
+          filters={filters as unknown as JobFilters}
+          onFiltersChange={(f) => onFiltersChange(f as unknown as FiltersFormValues)}
+          onClearAllFilters={onClearAllFilters}
+          activeFiltersCount={activeFiltersCount}
+          onOpenFilters={() => setFiltersOpen(true)}
+          showSaved={showSaved}
+          onToggleSaved={() => setShowSaved((s) => !s)}
+          sortKey={sortKey as any}
+          sortOrder={sortOrder}
+          onSortChange={onSortChange as any}
+          onSelectJob={(it) => setSelectedJob(it)}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          exporting={exporting}
+          onExportCurrentPage={onExportCurrentPage}
+          onExportAllFiltered={onExportAllFiltered}
+        />
+      </Stack>
+
+      <Stack gap="md" mb="lg">
+        <JobsChartsSection
+          meta={meta}
+          metrics={metrics}
+          topSkills={topSkills50}
+          emerging={emerging}
+          seriesSkills={seriesSkills}
+          autoSeriesEnabled={!seriesCustom}
+          onSeriesChange={(next) => {
+            setSeriesSkills(next)
+            const tops = metrics?.topSkills ?? []
+            const isTopReset = next.length === tops.length && next.every((v, i) => v === tops[i])
+            setSeriesCustom(!isTopReset)
+          }}
+          onToggleAuto={(auto) => {
+            setSeriesCustom(!auto)
+            if (auto && metrics) setSeriesSkills(metrics.seriesSkills)
+          }}
+          trends={trends}
+          setTrends={(t) => setTrends(t)}
+          loading={metricsQuery.isLoading && topSkillsQuery.isLoading && emergingQuery.isLoading}
+          fetching={
+            metricsQuery.isFetching || topSkillsQuery.isFetching || emergingQuery.isFetching
+          }
+          errors={{
+            metrics: metricsQuery.error,
+            topSkills: topSkillsQuery.error,
+            emerging: emergingQuery.error,
+          }}
+          onRetry={() => {
+            metricsQuery.refetch()
+            topSkillsQuery.refetch()
+            emergingQuery.refetch()
+          }}
+        />
+      </Stack>
+
+      <Stack gap="md">
+        <Section title="Comparaison par ville" subtitle="Évolution mensuelle d’un skill par ville">
+          <CitySkillTrendView
+            filters={filters as JobFilters}
+            meta={meta}
+            defaultSkill={metrics?.topSkills?.[0]}
+          />
+        </Section>
+      </Stack>
+
+      <JobDetailsDrawer job={selectedJob} onClose={() => setSelectedJob(null)} />
+    </Container>
+  )
+}

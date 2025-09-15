@@ -1,25 +1,41 @@
-import { NextRequest } from 'next/server';
-import { getEmergingCached } from '@/server/jobs/analytics';
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams';
+import { NextRequest } from 'next/server'
+import { getEmergingCached } from '@/server/jobs/analytics'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
+import { parseEmergingParams } from '@/server/api/schemas'
+import { getDatasetVersion } from '@/server/jobs/repository'
+import { stableStringify } from '@/shared/utils/stableStringify'
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const parsed = parseFiltersFromSearchParams(searchParams);
-    const { page, pageSize, ...filters } = parsed;
-    void page; void pageSize;
+    const { searchParams } = new URL(req.url)
+    const parsed = parseFiltersFromSearchParams(searchParams)
+    const { page, pageSize, ...filters } = parsed
+    void page
+    void pageSize
 
-    const monthsWindow = Number.parseInt(searchParams.get('monthsWindow') || '12', 10);
-    const topK = Number.parseInt(searchParams.get('topK') || '10', 10);
-    const minTotalCount = Number.parseInt(searchParams.get('minTotalCount') || '5', 10);
+    const { monthsWindow, topK, minTotalCount } = parseEmergingParams(searchParams)
+    const [payload, version] = await Promise.all([
+      getEmergingCached(filters, monthsWindow, topK, minTotalCount),
+      getDatasetVersion(),
+    ])
 
-    const payload = await getEmergingCached(filters, monthsWindow, topK, minTotalCount);
-    return Response.json(payload, { status: 200, headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' } });
+    const etag = `W/"${version}|${stableStringify({ filters, monthsWindow, topK, minTotalCount })}"`
+    const inm = req.headers.get('if-none-match') || ''
+    if (inm === etag) return new Response(null, { status: 304, headers: { ETag: etag } })
+
+    return Response.json(payload, {
+      status: 200,
+      headers: {
+        'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+        'X-Data-Version': version,
+        ETag: etag,
+      },
+    })
   } catch (e: unknown) {
-    console.error('[api/metrics/emerging-skills] error:', e);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[api/metrics/emerging-skills] error:', e)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

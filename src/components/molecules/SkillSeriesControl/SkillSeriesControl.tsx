@@ -1,20 +1,26 @@
-"use client";
+'use client'
 
-import { Box, Checkbox, HStack, Text } from "@chakra-ui/react";
-import type { CheckboxCheckedChangeDetails } from "@chakra-ui/react";
-import MultiSelect from "@/components/molecules/MultiSelect/MultiSelect";
+import { Box, Checkbox, HStack, Text } from '@chakra-ui/react'
+import type { CheckboxCheckedChangeDetails } from '@chakra-ui/react'
+import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
 
 interface Props {
-  options: string[]; // available skills
-  value: string[]; // selected series skills
-  onChange: (next: string[]) => void;
-  topSkills?: string[]; // for reset button
-  autoEnabled?: boolean;
-  onToggleAuto?: (auto: boolean) => void;
+  options: string[] // available skills
+  value: string[] // selected series skills
+  onChange: (next: string[]) => void
+  topSkills?: string[] // for reset button
+  autoEnabled?: boolean
+  onToggleAuto?: (auto: boolean) => void
 }
 
-export default function SkillSeriesControl({ options, value, onChange, topSkills, autoEnabled, onToggleAuto }: Props) {
-  
+export default function SkillSeriesControl({
+  options,
+  value,
+  onChange,
+  topSkills,
+  autoEnabled,
+  onToggleAuto,
+}: Props) {
   return (
     <Box w="full">
       <Box display="flex" flexDirection="column" gap={2}>
@@ -29,7 +35,9 @@ export default function SkillSeriesControl({ options, value, onChange, topSkills
         <HStack gap={2} align="center">
           <Checkbox.Root
             checked={!!autoEnabled}
-            onCheckedChange={(detail: CheckboxCheckedChangeDetails) => onToggleAuto?.(!!detail.checked)}
+            onCheckedChange={(detail: CheckboxCheckedChangeDetails) =>
+              onToggleAuto?.(!!detail.checked)
+            }
             aria-label="Suivre automatiquement le Top 10"
           >
             <Checkbox.HiddenInput />
@@ -43,9 +51,10 @@ export default function SkillSeriesControl({ options, value, onChange, topSkills
         </HStack>
 
         <Text fontSize="xs" color="textMuted">
-          Le Top 10 est généré automatiquement en fonction de votre recherche et des filtres appliqués.
+          Le Top 10 est généré automatiquement en fonction de votre recherche et des filtres
+          appliqués.
         </Text>
       </Box>
     </Box>
-  );
+  )
 }

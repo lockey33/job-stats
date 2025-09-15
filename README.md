@@ -33,6 +33,15 @@ pnpm run update:data:oldest # pivot from oldest date
 
 The previous `public/merged.json` path is no longer used (file is not exposed publicly).
 
+### Architecture rapide
+
+- Front (App Router): pages dans `src/app/*`, composants UI atomiques → molécules → organismes dans `src/components/*`.
+- Domaine jobs: API hooks + endpoints + utils dans `src/features/jobs/*` (séparé par `api/`, `types/`, `utils/`, `ui/`, `hooks/`).
+- Serveur (server-only): lecture dataset + calculs + caches mémoire dans `src/server/jobs/*`.
+- State/query: React Query v5 avec clés stables (`features/jobs/api/queryKeys.ts`).
+- Validation: Zod pour schémas (requêtes API et données).
+- Accessibilité: composants avec ARIA, focus-visible, et navigation clavier.
+
 ## Export limits
 
 - API route `/api/export` streams CSV for large exports to reduce memory usage.
@@ -46,6 +55,7 @@ Expose a simple admin endpoint to clear in-memory caches (dataset repo cache, fa
 - Set an environment variable `ADMIN_SECRET`.
 - Call `POST /api/admin/cache/refresh` with header `x-admin-secret: <ADMIN_SECRET>`.
 - Optional query `?warm=true` will precompute facets after clearing.
+- Security: POST-only, header-only auth (no query secret).
 
 Example (curl):
 

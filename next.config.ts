@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   eslint: {
-    // We ignore lint errors during builds to avoid blocking deployments
+    // Lint errors do not block builds while migrating to no-semicolons
     ignoreDuringBuilds: true,
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

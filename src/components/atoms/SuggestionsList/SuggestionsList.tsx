@@ -1,15 +1,15 @@
-"use client";
+'use client'
 
-import { Box } from "@chakra-ui/react";
+import { Box } from '@chakra-ui/react'
 
 interface Props {
-  items: string[];
-  onSelect: (value: string) => void;
-  overlay?: boolean; // absolute overlay positioned under an anchor
+  items: string[]
+  onSelect: (value: string) => void
+  overlay?: boolean // absolute overlay positioned under an anchor
 }
 
 export default function SuggestionsList({ items, onSelect, overlay = false }: Props) {
-  if (!items || items.length === 0) return null;
+  if (!items || items.length === 0) return null
   return (
     <Box
       role="listbox"
@@ -37,13 +37,13 @@ export default function SuggestionsList({ items, onSelect, overlay = false }: Pr
           px="sm"
           py="sm"
           fontSize="sm"
-          _hover={{ bg: "neutral.50" }}
+          _hover={{ bg: 'neutral.50' }}
           _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '2px' }}
           onClick={() => onSelect(s)}
           onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onSelect(s);
+              e.preventDefault()
+              onSelect(s)
             }
           }}
         >
@@ -51,5 +51,5 @@ export default function SuggestionsList({ items, onSelect, overlay = false }: Pr
         </Box>
       ))}
     </Box>
-  );
+  )
 }

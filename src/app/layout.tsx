@@ -1,8 +1,9 @@
-import type { Metadata, Viewport } from "next";
-import "react-datepicker/dist/react-datepicker.css";
-import Providers from "./providers";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import type { Metadata, Viewport } from 'next'
+import 'react-datepicker/dist/react-datepicker.css'
+import Providers from './providers'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
+import { env } from '@/env'
 
 export const metadata: Metadata = {
   title: {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   },
   description: 'Recherche, filtres et tendances (skills, TJM) sur vos offres.',
   applicationName: 'Job Stats Explorer',
-  metadataBase: process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined,
+  metadataBase: env.NEXT_PUBLIC_SITE_URL ? new URL(env.NEXT_PUBLIC_SITE_URL) : undefined,
   openGraph: {
     title: 'Job Stats Explorer',
     description: 'Recherche, filtres et tendances (skills, TJM) sur vos offres.',
@@ -23,16 +24,16 @@ export const metadata: Metadata = {
     title: 'Job Stats Explorer',
     description: 'Recherche, filtres et tendances (skills, TJM) sur vos offres.',
   },
-};
+}
 
 export const viewport: Viewport = {
   themeColor: '#ffffff',
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="fr" className={`light ${GeistSans.variable} ${GeistMono.variable}`}>
@@ -40,10 +41,8 @@ export default function RootLayout({
         <meta name="emotion-insertion-point" content="" />
       </head>
       <body className={`antialiased`} style={{ background: '#f8fafc' }}>
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  );
+  )
 }

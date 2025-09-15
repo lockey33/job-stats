@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { JobFilters } from '@/features/jobs/types/types';
+import { z } from 'zod'
+import { JobFilters } from '@/features/jobs/types/types'
 
 export const filtersSchema = z.object({
   q: z.string().optional(),
@@ -20,12 +20,20 @@ export const filtersSchema = z.object({
   endDate: z.string().optional(),
   page: z.coerce.number().default(1),
   pageSize: z.coerce.number().default(20),
-});
+})
 
-export type ParsedFilters = z.infer<typeof filtersSchema>;
+export type ParsedFilters = z.infer<typeof filtersSchema>
 
-export function parseFiltersFromSearchParams(params: URLSearchParams): JobFilters & { page: number; pageSize: number } {
-  const getArray = (key: string) => params.getAll(key).flatMap((v) => v.split(',').map((s) => s.trim()).filter(Boolean));
+export function parseFiltersFromSearchParams(
+  params: URLSearchParams,
+): JobFilters & { page: number; pageSize: number } {
+  const getArray = (key: string) =>
+    params.getAll(key).flatMap((v) =>
+      v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
 
   const input = {
     q: params.get('q') ?? undefined,
@@ -46,38 +54,42 @@ export function parseFiltersFromSearchParams(params: URLSearchParams): JobFilter
     endDate: params.get('endDate') ?? undefined,
     page: params.get('page') ?? undefined,
     pageSize: params.get('pageSize') ?? undefined,
-  };
+  }
 
-  const parsed = filtersSchema.parse(input);
-  const { page, pageSize, ...rest } = parsed;
-  return { ...rest, page, pageSize };
+  const parsed = filtersSchema.parse(input)
+  const { page, pageSize, ...rest } = parsed
+  return { ...rest, page, pageSize }
 }
 
-export function toQueryString(filters: Partial<JobFilters & { page: number; pageSize: number }>): string {
-  const params = new URLSearchParams();
+export function toQueryString(
+  filters: Partial<JobFilters & { page: number; pageSize: number }>,
+): string {
+  const params = new URLSearchParams()
   const addArray = (key: string, arr?: string[]) => {
-    if (!arr || arr.length === 0) return;
-    params.set(key, arr.join(','));
-  };
+    if (!arr || arr.length === 0) return
+    params.set(key, arr.join(','))
+  }
 
-  if (filters.q) params.set('q', filters.q);
-  addArray('skills', filters.skills as string[] | undefined);
-  addArray('excludeSkills', filters.excludeSkills as string[] | undefined);
-  addArray('excludeTitle', filters.excludeTitle as string[] | undefined);
-  addArray('cities', filters.cities as string[] | undefined);
-  if (filters.cityMatch) params.set('cityMatch', filters.cityMatch);
-  if ('excludeCities' in filters && typeof filters.excludeCities !== 'undefined') params.set('excludeCities', String(filters.excludeCities));
-  addArray('regions', filters.regions as string[] | undefined);
-  if ('excludeRegions' in filters && typeof filters.excludeRegions !== 'undefined') params.set('excludeRegions', String(filters.excludeRegions));
-  addArray('remote', filters.remote as string[] | undefined);
-  addArray('experience', filters.experience as string[] | undefined);
-  addArray('job_slugs', filters.job_slugs as string[] | undefined);
-  if (typeof filters.minTjm === 'number') params.set('minTjm', String(filters.minTjm));
-  if (typeof filters.maxTjm === 'number') params.set('maxTjm', String(filters.maxTjm));
-  if (filters.startDate) params.set('startDate', filters.startDate);
-  if (filters.endDate) params.set('endDate', filters.endDate);
-  if (filters.page) params.set('page', String(filters.page));
-  if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
+  if (filters.q) params.set('q', filters.q)
+  addArray('skills', filters.skills as string[] | undefined)
+  addArray('excludeSkills', filters.excludeSkills as string[] | undefined)
+  addArray('excludeTitle', filters.excludeTitle as string[] | undefined)
+  addArray('cities', filters.cities as string[] | undefined)
+  if (filters.cityMatch) params.set('cityMatch', filters.cityMatch)
+  if ('excludeCities' in filters && typeof filters.excludeCities !== 'undefined')
+    params.set('excludeCities', String(filters.excludeCities))
+  addArray('regions', filters.regions as string[] | undefined)
+  if ('excludeRegions' in filters && typeof filters.excludeRegions !== 'undefined')
+    params.set('excludeRegions', String(filters.excludeRegions))
+  addArray('remote', filters.remote as string[] | undefined)
+  addArray('experience', filters.experience as string[] | undefined)
+  addArray('job_slugs', filters.job_slugs as string[] | undefined)
+  if (typeof filters.minTjm === 'number') params.set('minTjm', String(filters.minTjm))
+  if (typeof filters.maxTjm === 'number') params.set('maxTjm', String(filters.maxTjm))
+  if (filters.startDate) params.set('startDate', filters.startDate)
+  if (filters.endDate) params.set('endDate', filters.endDate)
+  if (filters.page) params.set('page', String(filters.page))
+  if (filters.pageSize) params.set('pageSize', String(filters.pageSize))
 
-  return params.toString();
+  return params.toString()
 }

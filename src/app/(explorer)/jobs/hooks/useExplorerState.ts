@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import { useDeferredValue, useEffect } from 'react';
-import { useForm, useWatch, type Resolver } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { filtersSchema } from '@/shared/utils/searchParams';
-import { useQueryState, parseAsInteger, parseAsString } from 'nuqs';
+import { useDeferredValue, useEffect } from 'react'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { filtersSchema } from '@/shared/utils/searchParams'
+import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
 
 const formSchema = filtersSchema.pick({
   q: true,
@@ -24,36 +24,43 @@ const formSchema = filtersSchema.pick({
   maxTjm: true,
   startDate: true,
   endDate: true,
-});
+})
 
-export type FiltersFormValues = z.infer<typeof formSchema>;
-type SortKey = 'title' | 'company' | 'city' | 'experience' | 'tjm' | 'date' | undefined;
-type SortOrder = 'asc' | 'desc';
+export type FiltersFormValues = z.infer<typeof formSchema>
+type SortKey = 'title' | 'company' | 'city' | 'experience' | 'tjm' | 'date' | undefined
+type SortOrder = 'asc' | 'desc'
 
 export function useExplorerState() {
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
-  const [pageSize, setPageSize] = useQueryState('pageSize', parseAsInteger.withDefault(20));
-  const [sortKeyRaw, setSortKeyRaw] = useQueryState('sortKey', parseAsString);
-  const [sortOrderRaw, setSortOrderRaw] = useQueryState('sortOrder', parseAsString.withDefault('asc'));
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [pageSize, setPageSize] = useQueryState('pageSize', parseAsInteger.withDefault(20))
+  const [sortKeyRaw, setSortKeyRaw] = useQueryState('sortKey', parseAsString)
+  const [sortOrderRaw, setSortOrderRaw] = useQueryState(
+    'sortOrder',
+    parseAsString.withDefault('asc'),
+  )
 
   const form = useForm<FiltersFormValues>({
     resolver: zodResolver(formSchema) as Resolver<FiltersFormValues>,
     defaultValues: {} as FiltersFormValues,
-  });
-  const filters = useWatch({ control: form.control });
-  const deferredFilters = useDeferredValue(filters);
+  })
+  const filters = useWatch({ control: form.control })
+  const deferredFilters = useDeferredValue(filters)
 
-  useEffect(() => { setPage(1); }, [deferredFilters, setPage]);
+  useEffect(() => {
+    setPage(1)
+  }, [deferredFilters, setPage])
 
   return {
     form,
     filters,
     deferredFilters,
-    page, setPage,
-    pageSize, setPageSize,
-    sortKey: (sortKeyRaw as SortKey),
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    sortKey: sortKeyRaw as SortKey,
     setSortKey: (v: SortKey) => setSortKeyRaw((v ?? null) as unknown as string | null),
-    sortOrder: (sortOrderRaw as SortOrder),
+    sortOrder: sortOrderRaw as SortOrder,
     setSortOrder: (v: SortOrder) => setSortOrderRaw(v),
-  } as const;
+  } as const
 }

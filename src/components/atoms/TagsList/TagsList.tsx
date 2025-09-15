@@ -1,30 +1,30 @@
-"use client";
+'use client'
 
-import { Box, Tag } from "@chakra-ui/react";
-import type { ComponentProps } from "react";
+import { Box, Tag } from '@chakra-ui/react'
+import type { ComponentProps } from 'react'
 
-type TagRootProps = ComponentProps<typeof Tag.Root>;
+type TagRootProps = ComponentProps<typeof Tag.Root>
 
 interface Props {
-  items: string[];
-  gap?: string | number;
-  size?: TagRootProps['size'];
-  variant?: TagRootProps['variant'];
-  colorPalette?: TagRootProps['colorPalette'];
-  closable?: boolean;
-  onRemove?: (item: string) => void;
+  items: string[]
+  gap?: string | number
+  size?: TagRootProps['size']
+  variant?: TagRootProps['variant']
+  colorPalette?: TagRootProps['colorPalette']
+  closable?: boolean
+  onRemove?: (item: string) => void
 }
 
 export default function TagsList({
   items,
-  gap = "xs",
-  size = "sm",
-  variant = "subtle",
+  gap = 'xs',
+  size = 'sm',
+  variant = 'subtle',
   colorPalette,
   closable = false,
   onRemove,
 }: Props) {
-  if (!items || items.length === 0) return null;
+  if (!items || items.length === 0) return null
   return (
     <Box display="flex" flexWrap="wrap" gap={gap}>
       {items.map((s, idx) => (
@@ -36,5 +36,5 @@ export default function TagsList({
         </Tag.Root>
       ))}
     </Box>
-  );
+  )
 }
