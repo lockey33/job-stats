@@ -1,12 +1,14 @@
-import { NextRequest } from 'next/server'
-import { clearCache as clearRepoCache, getDatasetVersion } from '@/server/jobs/repository'
-import { clearFacetsCache, getMetaFacets } from '@/server/jobs/facets'
+import type { NextRequest } from 'next/server'
+
+import type { JobFilters } from '@/features/jobs/types/types'
 import {
   clearAnalyticsCaches,
+  getEmergingCached,
   getMetricsCached,
   getTopSkillsCached,
-  getEmergingCached,
 } from '@/server/jobs/analytics'
+import { clearFacetsCache, getMetaFacets } from '@/server/jobs/facets'
+import { clearCache as clearRepoCache, getDatasetVersion } from '@/server/jobs/repository'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,9 +45,9 @@ export async function POST(req: NextRequest) {
     try {
       await Promise.all([
         getMetaFacets(),
-        getMetricsCached({} as any),
-        getTopSkillsCached({} as any, 50),
-        getEmergingCached({} as any, 12, 10, 5),
+        getMetricsCached({} as unknown as JobFilters),
+        getTopSkillsCached({} as unknown as JobFilters, 50),
+        getEmergingCached({} as unknown as JobFilters, 12, 10, 5),
       ])
     } catch {}
   }
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
   return Response.json({ ok: true, version, warmed: warm })
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   // POST only for mutation
   return new Response(null, { status: 405, headers: { Allow: 'POST' } })
 }

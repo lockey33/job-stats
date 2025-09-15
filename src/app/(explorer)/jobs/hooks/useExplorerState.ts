@@ -1,11 +1,12 @@
 'use client'
 
-import { useDeferredValue, useEffect } from 'react'
-import { useForm, useWatch, type Resolver } from 'react-hook-form'
-import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { parseAsInteger, parseAsString,useQueryState } from 'nuqs'
+import { useDeferredValue, useEffect } from 'react'
+import { type Resolver,useForm, useWatch } from 'react-hook-form'
+import { z } from 'zod'
+
 import { filtersSchema } from '@/shared/utils/searchParams'
-import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
 
 const formSchema = filtersSchema.pick({
   q: true,

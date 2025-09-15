@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Input } from '@chakra-ui/react'
-import SuggestionsList from '@/components/atoms/SuggestionsList/SuggestionsList'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
 import CloseableTag from '@/components/atoms/CloseableTag/CloseableTag'
+import SuggestionsList from '@/components/atoms/SuggestionsList/SuggestionsList'
 
 type Normalizer = (s: string) => string
 

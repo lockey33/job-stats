@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+import { applyFilters, dedupeById,paginate } from '@/features/jobs/utils/filtering'
 import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
-import { applyFilters, paginate, dedupeById } from '@/features/jobs/utils/filtering'
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { buildEtag } from '@/shared/react-query/keys'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

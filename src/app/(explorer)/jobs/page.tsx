@@ -1,21 +1,25 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { ClientJobsPage } from './JobsPage.client'
+
 import { queryKeys } from '@/features/jobs/api/queryKeys'
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
-import { getAllJobs } from '@/server/jobs/repository'
-import { getMetaFacets } from '@/server/jobs/facets'
-import { getEmergingCached, getMetricsCached, getTopSkillsCached } from '@/server/jobs/analytics'
 import { applyFilters, dedupeById, paginate } from '@/features/jobs/utils/filtering'
+import { getEmergingCached, getMetricsCached, getTopSkillsCached } from '@/server/jobs/analytics'
+import { getMetaFacets } from '@/server/jobs/facets'
+import { getAllJobs } from '@/server/jobs/repository'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
+
+import { JobsPageClient } from './JobsPage.client'
 
 export const runtime = 'nodejs'
 
-export default async function JobsPage({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>
-}) {
+type SearchParams = Record<string, string | string[] | undefined>
+
+export default async function JobsPage(props: { searchParams?: Promise<SearchParams> }) {
+  const resolved: SearchParams | undefined = props.searchParams
+    ? await props.searchParams
+    : undefined
+
   const usp = new URLSearchParams()
-  for (const [k, v] of Object.entries(searchParams ?? {})) {
+  for (const [k, v] of Object.entries(resolved ?? {})) {
     if (Array.isArray(v)) v.forEach((vi) => usp.append(k, vi))
     else if (typeof v === 'string') usp.set(k, v)
   }
@@ -58,7 +62,7 @@ export default async function JobsPage({
 
   return (
     <HydrationBoundary state={dehydrate(qc)}>
-      <ClientJobsPage />
+      <JobsPageClient />
     </HydrationBoundary>
   )
 }

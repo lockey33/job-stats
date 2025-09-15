@@ -1,20 +1,21 @@
 'use client'
 
-import React from 'react'
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-} from 'recharts'
-import { AnalyticsResult } from '@/features/jobs/types/types'
 import { Box, Text } from '@chakra-ui/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import React from 'react'
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+
+import type { AnalyticsResult } from '@/features/jobs/types/types'
 
 const COLORS = [
   '#2563eb',
@@ -34,11 +35,12 @@ type Mode = 'basics' | 'skills'
 interface Props {
   metrics: AnalyticsResult | null
   months?: 6 | 12 | 24
-  smooth?: boolean
   mode?: Mode
+  controlSlot?: React.ReactNode
 }
 
-export default function Charts({ metrics, months = 12, smooth = false, mode = 'basics' }: Props) {
+export default function Charts({ metrics, months = 12, mode = 'basics', controlSlot }: Props) {
+  const [hidden, setHidden] = React.useState<string[]>([])
   if (!metrics) return null
 
   const fmtMonth = (m: string) => {
@@ -47,6 +49,8 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
     return format(d, 'MMM yyyy', { locale: fr })
   }
 
+  type TooltipItem = { name?: string; value?: number; color?: string }
+
   function SimpleTooltip({
     active,
     payload,
@@ -54,7 +58,7 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
     unit,
   }: {
     active?: boolean
-    payload?: any[]
+    payload?: TooltipItem[]
     label?: string
     unit?: string
   }) {
@@ -79,7 +83,7 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
     label,
   }: {
     active?: boolean
-    payload?: any[]
+    payload?: TooltipItem[]
     label?: string
   }) {
     if (!active || !payload || payload.length === 0) return null
@@ -103,12 +107,12 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
     )
   }
 
-  function SimpleLegend({ payload }: { payload?: any[] }) {
+  function SimpleLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
     if (!payload || payload.length === 0) return null
     return (
       <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
-        {payload.map((p: any, idx: number) => {
-          const name = p.value as string
+        {payload.map((p, idx: number) => {
+          const name = (p.value ?? '') as string
           const isHidden = hidden.includes(name)
           return (
             <Box
@@ -147,42 +151,14 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
   const keep = Math.max(1, Math.min(allMonths.length, months))
   const keptMonths = allMonths.slice(-keep)
 
-  function ma3(
-    series: Array<Record<string, number | string>>,
-  ): Array<Record<string, number | string>> {
-    if (!smooth) return series
-    // Apply moving average on numeric series keys (ignoring 'month')
-    const out = series.map((row) => ({ ...row }))
-    for (let i = 0; i < series.length; i++) {
-      const acc: Record<string, number> = {}
-      let count = 0
-      for (let j = Math.max(0, i - 1); j <= Math.min(series.length - 1, i + 1); j++) {
-        const r = series[j]
-        Object.keys(r).forEach((k) => {
-          if (k === 'month') return
-          const v = r[k]
-          if (typeof v === 'number') {
-            acc[k] = (acc[k] || 0) + v
-          }
-        })
-        count++
-      }
-      Object.keys(acc).forEach((k) => {
-        ;(out[i] as any)[k] = Math.round((acc[k] / count) * 100) / 100
-      })
-    }
-    return out
-  }
+  // Smoothing removed per UX decision
 
   // Slice datasets
   const postingsPerMonth = metrics.postingsPerMonth.filter((p) => keptMonths.includes(p.month))
   const avgTjmPerMonth = metrics.avgTjmPerMonth.filter((p) => keptMonths.includes(p.month))
-  const skillsPerMonth = ma3(
-    metrics.skillsPerMonth.filter((p) => keptMonths.includes(String(p.month))),
-  )
+  const skillsPerMonth = metrics.skillsPerMonth.filter((p) => keptMonths.includes(String(p.month)))
 
   // Allow toggling series visibility for skills
-  const [hidden, setHidden] = React.useState<string[]>([])
   function toggleSeries(name: string) {
     setHidden((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
   }
@@ -245,12 +221,13 @@ export default function Charts({ metrics, months = 12, smooth = false, mode = 'b
   return (
     <Box>
       <Text fontSize="sm" fontWeight="semibold" mb="xs">
-        Tendances des skills
+        Tendances des compétences
       </Text>
-      <Text fontSize="xs" color="gray.600" mb="sm">
-        Ajoutez/retirez des skills via le sélecteur, et cliquez sur la légende pour masquer/afficher
-        une série.
+      <Text fontSize="xs" color="gray.600" mb="xs">
+        Ajoutez/retirez des compétences via le sélecteur, et cliquez sur la légende pour
+        masquer/afficher une série.
       </Text>
+      {controlSlot ? <Box mb="sm">{controlSlot}</Box> : null}
       <Box h="20rem">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={skillsPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>

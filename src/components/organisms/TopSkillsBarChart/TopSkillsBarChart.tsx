@@ -1,24 +1,27 @@
 'use client'
 
 import { Box, Text } from '@chakra-ui/react'
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
-import { TopSkill } from '@/features/jobs/types/types'
+import { Bar, BarChart, CartesianGrid,ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+
+import type { TopSkill } from '@/features/jobs/types/types'
 
 interface Props {
   data: TopSkill[] | null
   maxItems?: number
+  controlSlot?: React.ReactNode
 }
 
-export default function TopSkillsBarChart({ data, maxItems = 50 }: Props) {
+export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: Props) {
   if (!data || data.length === 0) return null
   const chartData = data.slice(0, maxItems).map((d) => ({ name: d.skill, value: d.count }))
+  type TipItem = { value?: number }
   function CustomTooltip({
     active,
     payload,
     label,
   }: {
     active?: boolean
-    payload?: any[]
+    payload?: TipItem[]
     label?: string
   }) {
     if (!active || !payload || payload.length === 0) return null
@@ -34,9 +37,12 @@ export default function TopSkillsBarChart({ data, maxItems = 50 }: Props) {
   }
   return (
     <Box borderWidth="0px" p={0} bg="transparent" shadow="none">
-      <Text fontSize="sm" fontWeight="semibold" mb="xs">
-        Top 50 des skills (nombre d&apos;offres)
-      </Text>
+      <Box display="flex" alignItems="center" justifyContent="space-between" gap="sm" mb="xs">
+        <Text fontSize="sm" fontWeight="semibold">
+          Top {maxItems} des compétences (nombre d&apos;offres)
+        </Text>
+        {controlSlot ? <Box>{controlSlot}</Box> : null}
+      </Box>
       <Box h="24rem">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 0 }}>

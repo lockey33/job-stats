@@ -1,19 +1,20 @@
 'use client'
 
+import { Alert, Box, Button,Stack } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
-import { Box, Stack, Alert, Button } from '@chakra-ui/react'
+
+import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay'
 import Section from '@/components/molecules/Section/Section'
 import SkillSeriesControl from '@/components/molecules/SkillSeriesControl/SkillSeriesControl'
+import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
+import TrendsControls from '@/components/molecules/TrendsControls/TrendsControls'
 import ChartsSkeleton from '@/components/organisms/ChartsSkeleton/ChartsSkeleton'
-import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay'
 import type {
   AnalyticsResult,
   EmergingSkillTrendPayload,
   MetaFacets,
   TopSkill,
 } from '@/features/jobs/types/types'
-import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
-import TrendsControls from '@/components/molecules/TrendsControls/TrendsControls'
 
 const Charts = dynamic(() => import('@/components/organisms/Charts/Charts'), {
   ssr: false,
@@ -64,23 +65,23 @@ export default function JobsChartsSection({
   if (loading) return <ChartsSkeleton />
 
   return (
-    <Section title="Tendances" subtitle="Volume d’offres, TJM moyen et tendances des skills">
+    <Section title="Tendances" subtitle="Volume d’offres, TJM moyen et tendances des compétences">
       {fetching && <LoadingOverlay text="Mise à jour des graphiques…" />}
-      {(errors?.metrics || errors?.topSkills || errors?.emerging) && (
+      {!!(errors && (errors.metrics || errors.topSkills || errors.emerging)) && (
         <Alert.Root status="warning" mb="md">
           <Alert.Indicator />
           <Alert.Content>
-            <Alert.Title>Certains graphiques n'ont pas pu être chargés</Alert.Title>
+            <Alert.Title>Certains graphiques n&apos;ont pas pu être chargés</Alert.Title>
             <Alert.Description>
-              {errors.metrics && (
+              {!!errors?.metrics && (
                 <div>Metrics: {String((errors.metrics as Error)?.message ?? errors.metrics)}</div>
               )}
-              {errors.topSkills && (
+              {!!errors?.topSkills && (
                 <div>
                   Top skills: {String((errors.topSkills as Error)?.message ?? errors.topSkills)}
                 </div>
               )}
-              {errors.emerging && (
+              {!!errors?.emerging && (
                 <div>
                   Émergentes: {String((errors.emerging as Error)?.message ?? errors.emerging)}
                 </div>
@@ -95,26 +96,45 @@ export default function JobsChartsSection({
         </Alert.Root>
       )}
       <Stack gap="md">
-        {meta && (
-          <SkillSeriesControl
-            options={meta.skills}
-            value={seriesSkills ?? []}
-            onChange={(next) => onSeriesChange(next)}
-            topSkills={metrics?.topSkills}
-            autoEnabled={autoSeriesEnabled}
-            onToggleAuto={(auto) => onToggleAuto(auto)}
-          />
-        )}
+        {/* Période pour les courbes */}
+        <TrendsControls value={trends} onChange={setTrends} variant="period" />
 
-        <TrendsControls value={trends} onChange={setTrends} />
+        <Charts metrics={metrics} months={trends.months} mode="basics" />
+        <Box as="hr" borderTopWidth="1px" borderColor="border" my="md" />
 
-        <Charts metrics={metrics} months={trends.months} smooth={trends.smooth} mode="basics" />
+        <Charts
+          metrics={metrics}
+          months={trends.months}
+          mode="skills"
+          controlSlot={
+            meta ? (
+              <SkillSeriesControl
+                options={meta.skills}
+                value={seriesSkills ?? []}
+                onChange={(next) => onSeriesChange(next)}
+                autoEnabled={autoSeriesEnabled}
+                onToggleAuto={(auto) => onToggleAuto(auto)}
+              />
+            ) : null
+          }
+        />
+        
+        <Box as="hr" borderTopWidth="1px" borderColor="border" my="md" />
 
-        <Charts metrics={metrics} months={trends.months} smooth={trends.smooth} mode="skills" />
+        {/* Top compétences: contrôle local sous le titre */}
+        <TopSkillsBarChart
+          data={topSkills ?? null}
+          maxItems={trends.topSkillsLimit}
+          controlSlot={<TrendsControls value={trends} onChange={setTrends} variant="topSkills" />}
+        />
+        <Box as="hr" borderTopWidth="1px" borderColor="border" my="md" />
 
-        <TopSkillsBarChart data={topSkills ?? null} maxItems={trends.topSkillsLimit} />
-
-        <EmergingSkillsChart payload={emerging ?? null} limit={trends.emergingLimit} />
+        {/* Émergentes: contrôle local sous le titre */}
+        <EmergingSkillsChart
+          payload={emerging ?? null}
+          limit={trends.emergingLimit}
+          controlSlot={<TrendsControls value={trends} onChange={setTrends} variant="emerging" />}
+        />
       </Stack>
     </Section>
   )

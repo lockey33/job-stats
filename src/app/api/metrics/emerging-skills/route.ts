@@ -1,9 +1,10 @@
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
+
 import { getEmergingCached } from '@/server/jobs/analytics'
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
-import { parseEmergingParams } from '@/shared/params/schemas'
 import { getDatasetVersion } from '@/server/jobs/repository'
+import { parseEmergingParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

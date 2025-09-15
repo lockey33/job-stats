@@ -1,17 +1,19 @@
 import 'server-only'
-import { getAllJobs, getDatasetVersion } from './repository'
+
 import type {
-  JobFilters,
   AnalyticsResult,
-  TopSkill,
   EmergingSkillTrendPayload,
+  JobFilters,
+  TopSkill,
 } from '@/features/jobs/types/types'
 import {
+  computeEmergingSkillsTrends,
   computeMetrics,
   computeTopSkillsTotals,
-  computeEmergingSkillsTrends,
 } from '@/features/jobs/utils/metrics'
 import { stableStringify } from '@/shared/utils/stableStringify'
+
+import { getAllJobs, getDatasetVersion } from './repository'
 
 type CacheEntry<T> = { version: string; key: string; value: T }
 

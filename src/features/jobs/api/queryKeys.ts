@@ -1,4 +1,4 @@
-import { paramsKey, normalizeKeyParams } from '@/shared/react-query/keys'
+import { normalizeKeyParams,paramsKey } from '@/shared/react-query/keys'
 
 export const queryKeys = {
   meta: () => ['meta'] as const,

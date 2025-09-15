@@ -1,7 +1,8 @@
 'use client'
 
+import { Box, Button, Drawer, Stack,Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
-import { Drawer, Box, Button, Text, Stack } from '@chakra-ui/react'
+
 import { CloseIcon } from '@/components/atoms/Icons/Icons'
 import SearchBar from '@/components/molecules/SearchBar/SearchBar'
 import FilterPanel from '@/components/organisms/FilterPanel/FilterPanel'
@@ -20,17 +21,19 @@ export default function FilterDrawer({ isOpen, onClose, meta, filters, onChange 
 
   useEffect(() => {
     if (isOpen) setDraft({ ...filters })
-  }, [isOpen])
+  }, [isOpen, filters])
 
   const updateDraft = useCallback((next: JobFilters) => {
     setDraft(next)
   }, [])
   const updateSearch = useCallback((q: string) => {
-    setDraft((prev) => ({ ...prev, q: q || undefined }))
+    setDraft((prev) => {
+      const next = { ...prev } as JobFilters & Record<string, unknown>
+      if (q) next.q = q
+      else delete next.q
+      return next as JobFilters
+    })
   }, [])
-  function resetDraft() {
-    setDraft({} as JobFilters)
-  }
   function confirm() {
     onChange(draft)
     onClose()
@@ -76,7 +79,7 @@ export default function FilterDrawer({ isOpen, onClose, meta, filters, onChange 
                 <Text fontSize="sm" fontWeight="medium" mb="xs">
                   Recherche
                 </Text>
-                <SearchBar value={draft.q} onChange={updateSearch} />
+                <SearchBar value={draft.q ?? ''} onChange={updateSearch} />
               </Box>
               <FilterPanel
                 meta={meta}

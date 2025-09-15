@@ -1,16 +1,17 @@
-import {
+import { itemTjmApprox as approx } from '@/features/jobs/utils/common'
+import { norm, normCity } from '@/shared/utils/normalize'
+
+import type {
+  AnalyticsResult,
+  EmergingSkillTrend,
+  EmergingSkillTrendPayload,
   JobFilters,
   JobItem,
-  AnalyticsResult,
   MonthlyPoint,
   SkillsSeriesPoint,
   TopSkill,
-  EmergingSkillTrend,
-  EmergingSkillTrendPayload,
 } from '../types/types'
 import { applyFilters, dedupeById } from './filtering'
-import { norm, normCity } from '@/shared/utils/normalize'
-import { itemTjmApprox as approx } from '@/features/jobs/utils/common'
 
 function monthKey(iso: string | undefined | null): string | null {
   if (!iso) return null
@@ -27,7 +28,8 @@ function linearRegressionSlope(y: number[]): number {
   let den = 0
   for (let i = 0; i < n; i++) {
     const dx = i - xMean
-    num += dx * (y[i] - yMean)
+    const yi = y[i] ?? yMean
+    num += dx * (yi - yMean)
     den += dx * dx
   }
   return den === 0 ? 0 : num / den
@@ -72,17 +74,20 @@ export function computeEmergingSkillsTrends(
     const map = countsByMonth[m] || {}
     const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
     const ranks: Record<string, number> = {}
-    for (let i = 0; i < entries.length; i++) ranks[entries[i][0]] = i + 1
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i]!
+      ranks[e[0]] = i + 1
+    }
     rankByMonth[m] = ranks
   }
   const defaultRankPerMonth: Record<string, number> = {}
-  for (const m of months) defaultRankPerMonth[m] = Object.keys(rankByMonth[m]).length + 1
+  for (const m of months) defaultRankPerMonth[m] = Object.keys(rankByMonth[m] ?? {}).length + 1
   const trends: EmergingSkillTrend[] = []
   for (const s of allSkills) {
     if ((totalInWindow[s] ?? 0) < minTotalCount) continue
-    const y = months.map((m) => rankByMonth[m][s] ?? defaultRankPerMonth[m])
-    const monthly = months.map((m, idx) => ({ month: m, rank: y[idx] }))
-    trends.push({ skill: s, monthly, slope: linearRegressionSlope(y) })
+    const y = months.map((m) => (rankByMonth[m]?.[s] ?? defaultRankPerMonth[m]))
+    const monthly = months.map((m, idx) => ({ month: m, rank: y[idx] as number }))
+    trends.push({ skill: s, monthly, slope: linearRegressionSlope(y as number[]) })
   }
   trends.sort((a, b) => {
     if (a.slope !== b.slope) return a.slope - b.slope

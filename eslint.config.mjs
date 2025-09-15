@@ -45,7 +45,9 @@ const eslintConfig = [
       'no-restricted-imports': [
         'error',
         {
+          // Avoid any accidental server/runtime imports in client layers
           patterns: ['@/server/*'],
+          paths: ['next/server', 'server-only'],
         },
       ],
     },

@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { JobFilters, MetaFacets } from '@/features/jobs/types/types'
-import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
-import ChipsInput from '@/components/molecules/ChipsInput/ChipsInput'
-import DatePicker from 'react-datepicker'
+import type { CheckboxCheckedChangeDetails } from '@chakra-ui/react'
+import { Box, Button, Checkbox, Grid, HStack, Input, Text } from '@chakra-ui/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Box, Text, Input, HStack, Checkbox, Grid, Button } from '@chakra-ui/react'
-import type { CheckboxCheckedChangeDetails } from '@chakra-ui/react'
+import { useEffect, useMemo, useState } from 'react'
+
 import ChakraDateInput from '@/components/atoms/ChakraDateInput/ChakraDateInput'
+import DatePicker from '@/components/atoms/DatePicker/DatePicker'
+import ChipsInput from '@/components/molecules/ChipsInput/ChipsInput'
+import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
+import type { JobFilters, MetaFacets } from '@/features/jobs/types/types'
 import { normCity } from '@/shared/utils/normalize'
 
 export interface FilterPanelProps {
@@ -45,7 +46,14 @@ export default function FilterPanel({
   const cityOptions = useMemo(() => meta?.cities ?? [], [meta])
   const regionOptions = useMemo(() => meta?.regions ?? [], [meta])
 
-  const update = (patch: Partial<JobFilters>) => onChange({ ...value, ...patch })
+  const update = (patch: Partial<JobFilters>) => {
+    const next = { ...value } as JobFilters & Record<string, unknown>
+    for (const [k, v] of Object.entries(patch)) {
+      if (typeof v === 'undefined') delete next[k]
+      else next[k] = v
+    }
+    onChange(next as JobFilters)
+  }
 
   // Helpers to convert between YYYY-MM-DD and Date for the datepicker
   function ymdToDate(ymd?: string): Date | null {
@@ -123,7 +131,7 @@ export default function FilterPanel({
         <SectionTitle label="Compétences" first />
         <Box gridColumn={gc('span 4')}>
           <Text fontSize="sm" fontWeight="medium" mb="xs">
-            Skills
+            Compétences
           </Text>
           <MultiSelect
             options={meta?.skills ?? []}
@@ -136,7 +144,7 @@ export default function FilterPanel({
 
         <Box gridColumn={gc('span 4')}>
           <Text fontSize="sm" fontWeight="medium" mb="xs">
-            Skills à exclure
+            Compétences à exclure
           </Text>
           <MultiSelect
             options={meta?.skills ?? []}
@@ -322,9 +330,11 @@ export default function FilterPanel({
           <Input
             type="number"
             value={value.minTjm ?? ''}
-            onChange={(e) =>
-              update({ minTjm: e.target.value ? Number(e.target.value) : undefined })
-            }
+            onChange={(e) => {
+              const v = e.target.value ? Number(e.target.value) : undefined
+              if (typeof v === 'number') update({ minTjm: v })
+              else update({})
+            }}
             size="sm"
             aria-label="TJM minimum"
           />
@@ -337,9 +347,11 @@ export default function FilterPanel({
           <Input
             type="number"
             value={value.maxTjm ?? ''}
-            onChange={(e) =>
-              update({ maxTjm: e.target.value ? Number(e.target.value) : undefined })
-            }
+            onChange={(e) => {
+              const v = e.target.value ? Number(e.target.value) : undefined
+              if (typeof v === 'number') update({ maxTjm: v })
+              else update({})
+            }}
             size="sm"
             aria-label="TJM maximum"
           />
@@ -352,19 +364,23 @@ export default function FilterPanel({
             Date de début
           </Text>
           <DatePicker
-            selected={ymdToDate(value.startDate)}
-            onChange={(d: Date | null) => update({ startDate: dateToYmd(d) })}
-            dateFormat="yyyy-MM-dd"
-            placeholderText="Choisir une date"
-            isClearable
-            maxDate={ymdToDate(value.endDate) ?? undefined}
-            selectsStart
-            startDate={ymdToDate(value.startDate) ?? undefined}
-            endDate={ymdToDate(value.endDate) ?? undefined}
-            todayButton="Aujourd’hui"
-            locale={fr}
-            customInput={<ChakraDateInput />}
-          />
+              selected={ymdToDate(value.startDate)}
+              onChange={(d: Date | null) => {
+                const sv = dateToYmd(d)
+                if (sv) update({ startDate: sv })
+                else update({})
+              }}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Choisir une date"
+              isClearable
+              maxDate={ymdToDate(value.endDate) ?? null}
+              selectsStart
+              startDate={ymdToDate(value.startDate) ?? null}
+              endDate={ymdToDate(value.endDate) ?? null}
+              todayButton="Aujourd’hui"
+              locale={fr}
+              customInput={<ChakraDateInput />}
+            />
         </Box>
 
         <Box gridColumn={gc('span 3')}>
@@ -372,19 +388,23 @@ export default function FilterPanel({
             Date de fin
           </Text>
           <DatePicker
-            selected={ymdToDate(value.endDate)}
-            onChange={(d: Date | null) => update({ endDate: dateToYmd(d) })}
-            dateFormat="yyyy-MM-dd"
-            placeholderText="Choisir une date"
-            isClearable
-            minDate={ymdToDate(value.startDate) ?? undefined}
-            selectsEnd
-            startDate={ymdToDate(value.startDate) ?? undefined}
-            endDate={ymdToDate(value.endDate) ?? undefined}
-            todayButton="Aujourd’hui"
-            locale={fr}
-            customInput={<ChakraDateInput />}
-          />
+              selected={ymdToDate(value.endDate)}
+              onChange={(d: Date | null) => {
+                const ev = dateToYmd(d)
+                if (ev) update({ endDate: ev })
+                else update({})
+              }}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Choisir une date"
+              isClearable
+              minDate={ymdToDate(value.startDate) ?? null}
+              selectsEnd
+              startDate={ymdToDate(value.startDate) ?? null}
+              endDate={ymdToDate(value.endDate) ?? null}
+              todayButton="Aujourd’hui"
+              locale={fr}
+              customInput={<ChakraDateInput />}
+            />
         </Box>
       </Grid>
     </Box>

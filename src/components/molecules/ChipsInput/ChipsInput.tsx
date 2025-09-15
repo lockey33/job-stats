@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Input } from '@chakra-ui/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import CloseableTag from '@/components/atoms/CloseableTag/CloseableTag'
 
 function norm(s: string): string {

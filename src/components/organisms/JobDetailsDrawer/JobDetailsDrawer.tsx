@@ -1,9 +1,10 @@
 'use client'
 
-import { cityToRegion } from '@/shared/geo/regions'
-import { Drawer, Box, Text, Button } from '@chakra-ui/react'
+import { Box, Button,Drawer, Text } from '@chakra-ui/react'
+
 import TagsList from '@/components/atoms/TagsList/TagsList'
 import type { JobItem } from '@/features/jobs/types/types'
+import { cityToRegion } from '@/shared/geo/regions'
 
 interface Props {
   job: JobItem | null

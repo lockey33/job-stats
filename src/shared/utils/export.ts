@@ -14,7 +14,7 @@ export function rowsToCSV(rows: Row[], headers?: string[]): string {
   if (rows.length === 0) {
     return headers && headers.length > 0 ? headers.join(',') + '\n' : ''
   }
-  const cols = headers && headers.length > 0 ? headers : Object.keys(rows[0])
+  const cols = headers && headers.length > 0 ? headers : Object.keys(rows[0]!)
   const out: string[] = []
   out.push(cols.join(','))
   for (const r of rows) {

@@ -22,7 +22,8 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Data
 
-- The application reads a merged dataset from `var/data/merged.json` (not public).
+- The application reads a merged dataset from `var/data/merged.json` by default.
+- You can override the path via env var `DATA_MERGED_PATH` (absolute or relative to the project).
 - To refresh or build it locally, run:
 
 ```bash
@@ -31,7 +32,7 @@ pnpm run update:data:dry    # dry‑run plan (no writes)
 pnpm run update:data:oldest # pivot from oldest date
 ```
 
-The previous `public/merged.json` path is no longer used (file is not exposed publicly).
+The `public/merged.json` path is not used anymore (dataset is not exposed publicly). Prefer `var/data/merged.json` or provide `DATA_MERGED_PATH`.
 
 ## Refactor: 2025-ready highlights
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, HStack, Text } from '@chakra-ui/react'
+
 import { DownloadIcon } from '@/components/atoms/Icons/Icons'
 
 interface Props {

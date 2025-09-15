@@ -1,15 +1,16 @@
 'use client'
 
-import { Box, Button, Alert, Text } from '@chakra-ui/react'
-import Section from '@/components/molecules/Section/Section'
-import AppliedFiltersChips from '@/components/molecules/AppliedFiltersChips/AppliedFiltersChips'
-import ResultsToolbar from '@/components/molecules/ResultsToolbar/ResultsToolbar'
-import SavedSearches from '@/components/organisms/SavedSearches/SavedSearches'
-import ResultsTable from '@/components/organisms/ResultsTable/ResultsTable'
-import Pagination from '@/components/molecules/Pagination/Pagination'
-import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay'
+import { Alert, Box, Button, Text } from '@chakra-ui/react'
+
 import { FilterIcon, StarIcon } from '@/components/atoms/Icons/Icons'
+import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay'
+import AppliedFiltersChips from '@/components/molecules/AppliedFiltersChips/AppliedFiltersChips'
+import Pagination from '@/components/molecules/Pagination/Pagination'
+import ResultsToolbar from '@/components/molecules/ResultsToolbar/ResultsToolbar'
+import Section from '@/components/molecules/Section/Section'
 import ResultsSkeleton from '@/components/organisms/ResultsSkeleton/ResultsSkeleton'
+import ResultsTable from '@/components/organisms/ResultsTable/ResultsTable'
+import SavedSearches from '@/components/organisms/SavedSearches/SavedSearches'
 import type { JobFilters, JobItem, JobsResult } from '@/features/jobs/types/types'
 
 type SortKey = 'title' | 'company' | 'city' | 'experience' | 'tjm' | 'date'
@@ -144,7 +145,7 @@ export default function JobsResultsSection(props: Props) {
           rightSlot={
             <Button size="md" variant="outline" onClick={onToggleSaved}>
               <StarIcon boxSize="1.25em" />
-              {showSaved ? 'Masquer « Sauver »' : 'Sauver cette recherche'}
+              {showSaved ? 'Masquer les recherches enregistrées' : 'Recherches enregistrées'}
             </Button>
           }
         />
@@ -156,7 +157,7 @@ export default function JobsResultsSection(props: Props) {
       )}
       <ResultsTable
         items={jobs.items}
-        sortKey={sortKey}
+        {...(sortKey ? { sortKey } : {})}
         sortOrder={sortOrder}
         onSortChange={onSortChange}
         onSelect={onSelectJob}

@@ -1,23 +1,25 @@
 'use client'
 
 import { Box, Text } from '@chakra-ui/react'
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-} from 'recharts'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { EmergingSkillTrendPayload } from '@/features/jobs/types/types'
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+
+import type { EmergingSkillTrendPayload } from '@/features/jobs/types/types'
 
 interface Props {
   payload: EmergingSkillTrendPayload | null
   limit?: number
+  controlSlot?: React.ReactNode
 }
 
 const COLORS = [
@@ -33,7 +35,7 @@ const COLORS = [
   '#f59e0b',
 ]
 
-export default function EmergingSkillsChart({ payload, limit = 10 }: Props) {
+export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }: Props) {
   if (!payload || !payload.trends || payload.trends.length === 0) return null
 
   const months = payload.months
@@ -63,11 +65,12 @@ export default function EmergingSkillsChart({ payload, limit = 10 }: Props) {
   const data: Array<Record<string, number | string>> = months.map((m) => ({ month: m }))
   trends.forEach((t) => {
     for (let i = 0; i < months.length; i++) {
-      const m = months[i]
+      const m = months[i]!
       const r = rankMapPerSkill.get(t.skill)?.get(m)
-      // score = maxRank + 1 - rank  => increases as rank improves
-      const score = typeof r === 'number' ? maxRankPerMonth[m] + 1 - r : 0
-      data[i][t.skill] = score
+      const maxR = maxRankPerMonth[m] ?? 0
+      const score = typeof r === 'number' ? maxR + 1 - r : 0
+      const row = data[i]!
+      row[t.skill] = score
     }
   })
 
@@ -77,13 +80,15 @@ export default function EmergingSkillsChart({ payload, limit = 10 }: Props) {
     return format(d, 'MMM yyyy', { locale: fr })
   }
 
+  type TipItem = { name?: string; value?: number; color?: string }
+
   function CustomTooltip({
     active,
     payload,
     label,
   }: {
     active?: boolean
-    payload?: any[]
+    payload?: TipItem[]
     label?: string
   }) {
     if (!active || !payload || payload.length === 0) return null
@@ -107,11 +112,11 @@ export default function EmergingSkillsChart({ payload, limit = 10 }: Props) {
     )
   }
 
-  function CustomLegend({ payload }: { payload?: any[] }) {
+  function CustomLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
     if (!payload || payload.length === 0) return null
     return (
       <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
-        {payload.map((p: any, idx: number) => (
+        {payload.map((p, idx: number) => (
           <Box
             key={idx}
             display="inline-flex"
@@ -132,9 +137,12 @@ export default function EmergingSkillsChart({ payload, limit = 10 }: Props) {
 
   return (
     <Box borderWidth="0px" p={0} bg="transparent" shadow="none">
-      <Text fontSize="sm" fontWeight="semibold" mb="xs">
-        Tendances émergentes (score croissant ~ meilleur rang)
-      </Text>
+      <Box display="flex" alignItems="center" justifyContent="space-between" gap="sm" mb="xs">
+        <Text fontSize="sm" fontWeight="semibold">
+          Compétences émergentes (score croissant = meilleur rang)
+        </Text>
+        {controlSlot ? <Box>{controlSlot}</Box> : null}
+      </Box>
       <Box h="20rem">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>

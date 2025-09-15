@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
-import { JobItem } from '@/features/jobs/types/types'
-import { Box, Text, Table } from '@chakra-ui/react'
+import { Box, Table,Text } from '@chakra-ui/react'
 import { format } from 'date-fns'
+import { useMemo } from 'react'
+
 import TagsList from '@/components/atoms/TagsList/TagsList'
+import type { JobItem } from '@/features/jobs/types/types'
 
 type SortKey = 'title' | 'company' | 'city' | 'experience' | 'tjm' | 'date'
 

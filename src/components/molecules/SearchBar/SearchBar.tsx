@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useDebounce } from '@/shared/hooks/useDebounce'
 import { Box, Input } from '@chakra-ui/react'
+import { useEffect,useState } from 'react'
+
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 interface Props {
   value?: string

@@ -1,9 +1,8 @@
 'use client'
 
-import { JobFilters } from '@/features/jobs/types/types'
-import RemovableChipsBar, {
-  ChipItem,
-} from '@/components/molecules/RemovableChipsBar/RemovableChipsBar'
+import type { ChipItem } from '@/components/molecules/RemovableChipsBar/RemovableChipsBar'
+import RemovableChipsBar from '@/components/molecules/RemovableChipsBar/RemovableChipsBar'
+import type { JobFilters } from '@/features/jobs/types/types'
 
 interface Props {
   value: JobFilters
@@ -12,6 +11,11 @@ interface Props {
 }
 
 export default function AppliedFiltersChips({ value, onChange, onClearAll }: Props) {
+  function unset<K extends keyof JobFilters>(key: K) {
+    const next = { ...value } as JobFilters & Record<string, unknown>
+    delete next[key as string]
+    onChange(next as JobFilters)
+  }
   const items: ChipItem[] = []
 
   // q
@@ -19,107 +23,107 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
     items.push({
       id: `q:${value.q}`,
       label: `Texte: ${value.q}`,
-      onRemove: () => onChange({ ...value, q: undefined }),
+      onRemove: () => unset('q'),
     })
   }
 
   // skills
-  ;(value.skills ?? []).forEach((s) => {
+  for (const s of (value.skills ?? []) as string[]) {
     items.push({
       id: `skill:${s}`,
       label: `Skill: ${s}`,
       onRemove: () => onChange({ ...value, skills: (value.skills ?? []).filter((x) => x !== s) }),
     })
-  })
+  }
 
   // excludeSkills
-  ;(value.excludeSkills ?? []).forEach((s) => {
+  for (const s of (value.excludeSkills ?? []) as string[]) {
     items.push({
       id: `ex-skill:${s}`,
       label: `Exclure skill: ${s}`,
       onRemove: () =>
         onChange({ ...value, excludeSkills: (value.excludeSkills ?? []).filter((x) => x !== s) }),
     })
-  })
+  }
 
   // excludeTitle
-  ;(value.excludeTitle ?? []).forEach((s) => {
+  for (const s of (value.excludeTitle ?? []) as string[]) {
     items.push({
       id: `ex-title:${s}`,
       label: `Titre - ${s}`,
       onRemove: () =>
         onChange({ ...value, excludeTitle: (value.excludeTitle ?? []).filter((x) => x !== s) }),
     })
-  })
+  }
 
   // cities / regions
-  ;(value.cities ?? []).forEach((c) => {
+  for (const c of (value.cities ?? []) as string[]) {
     items.push({
       id: `city:${c}`,
       label: `Ville: ${c}`,
       onRemove: () => onChange({ ...value, cities: (value.cities ?? []).filter((x) => x !== c) }),
     })
-  })
-  ;(value.regions ?? []).forEach((r) => {
+  }
+  for (const r of (value.regions ?? []) as string[]) {
     items.push({
       id: `region:${r}`,
       label: `Région: ${r}`,
       onRemove: () => onChange({ ...value, regions: (value.regions ?? []).filter((x) => x !== r) }),
     })
-  })
+  }
 
   if (value.cityMatch === 'exact') {
     items.push({
       id: `cityMatch:exact`,
       label: `Ville: correspondance exacte`,
-      onRemove: () => onChange({ ...value, cityMatch: undefined }),
+      onRemove: () => unset('cityMatch'),
     })
   }
   if (value.excludeCities) {
     items.push({
       id: `flag:excludeCities`,
       label: `Exclure ces villes`,
-      onRemove: () => onChange({ ...value, excludeCities: undefined }),
+      onRemove: () => unset('excludeCities'),
     })
   }
   if (value.excludeRegions) {
     items.push({
       id: `flag:excludeRegions`,
       label: `Exclure ces régions`,
-      onRemove: () => onChange({ ...value, excludeRegions: undefined }),
+      onRemove: () => unset('excludeRegions'),
     })
   }
 
   // remote / experience
-  ;(value.remote ?? []).forEach((r) => {
+  for (const r of (value.remote ?? []) as string[]) {
     items.push({
       id: `remote:${r}`,
       label: `Remote: ${r}`,
       onRemove: () => onChange({ ...value, remote: (value.remote ?? []).filter((x) => x !== r) }),
     })
-  })
-  ;(value.experience ?? []).forEach((e) => {
+  }
+  for (const e of (value.experience ?? []) as string[]) {
     items.push({
       id: `exp:${e}`,
       label: `Exp: ${e}`,
       onRemove: () =>
         onChange({ ...value, experience: (value.experience ?? []).filter((x) => x !== e) }),
     })
-  })
+  }
 
   // min/max TJM
   if (typeof value.minTjm === 'number') {
     items.push({
       id: `minTjm:${value.minTjm}`,
       label: `TJM ≥ ${value.minTjm} €`,
-      onRemove: () => onChange({ ...value, minTjm: undefined }),
+      onRemove: () => unset('minTjm'),
     })
   }
   if (typeof value.maxTjm === 'number') {
     items.push({
       id: `maxTjm:${value.maxTjm}`,
       label: `TJM ≤ ${value.maxTjm} €`,
-      onRemove: () => onChange({ ...value, maxTjm: undefined }),
+      onRemove: () => unset('maxTjm'),
     })
   }
 
@@ -128,24 +132,29 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
     items.push({
       id: `start:${value.startDate}`,
       label: `Début: ${value.startDate}`,
-      onRemove: () => onChange({ ...value, startDate: undefined }),
+      onRemove: () => unset('startDate'),
     })
   if (value.endDate)
     items.push({
       id: `end:${value.endDate}`,
       label: `Fin: ${value.endDate}`,
-      onRemove: () => onChange({ ...value, endDate: undefined }),
+      onRemove: () => unset('endDate'),
     })
 
   // job_slugs
-  ;(value.job_slugs ?? []).forEach((s) => {
+  for (const s of (value.job_slugs ?? []) as string[]) {
     items.push({
       id: `slug:${s}`,
       label: `Slug: ${s}`,
       onRemove: () =>
         onChange({ ...value, job_slugs: (value.job_slugs ?? []).filter((x) => x !== s) }),
     })
-  })
+  }
 
-  return <RemovableChipsBar items={items} onClearAll={onClearAll ?? (() => onChange({}))} />
+  return (
+    <RemovableChipsBar
+      items={items}
+      onClearAll={onClearAll ?? (() => onChange({} as JobFilters))}
+    />
+  )
 }

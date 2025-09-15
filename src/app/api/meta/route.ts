@@ -5,7 +5,7 @@ import { buildEtag } from '@/shared/react-query/keys'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(req?: Request) {
+export async function GET(req: Request) {
   try {
     const [facets, version] = await Promise.all([getMetaFacets(), getDatasetVersion()])
 

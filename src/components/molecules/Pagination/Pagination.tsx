@@ -10,7 +10,7 @@ interface Props {
   onPageSizeChange?: (size: number) => void
 }
 
-import { HStack, Button, Text, Input } from '@chakra-ui/react'
+import { Button, HStack, Input,Text } from '@chakra-ui/react'
 
 export default function Pagination({
   page,

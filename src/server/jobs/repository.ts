@@ -1,17 +1,20 @@
 import 'server-only'
-import { readFile, stat, readdir, mkdir, writeFile } from 'node:fs/promises'
+
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { JobItem } from '@/features/jobs/types/types'
+
+import { env } from '@/env'
+import type { JobItem } from '@/features/jobs/types/types'
 import { JobItemSchema } from '@/features/jobs/utils/schemas'
 
 type DatasetCache = { jobs: JobItem[]; path: string; version: string } | null
 let cache: DatasetCache = null
 
 const CANDIDATES = [
+  // Highest priority: explicit env override
+  ...(env.DATA_MERGED_PATH ? [env.DATA_MERGED_PATH] : []),
+  // Default location maintained by update-data script
   path.join(process.cwd(), 'var', 'data', 'merged.json'),
-  path.join(process.cwd(), 'public', 'merged.json'),
-  path.join(process.cwd(), 'public', 'data', 'merged.json'),
-  path.join(process.cwd(), 'data', 'merge', 'merged.json'),
 ]
 
 async function findMergedJsonPath(): Promise<string> {
@@ -27,7 +30,7 @@ async function findMergedJsonPath(): Promise<string> {
   }
   const lastMsg = lastErr instanceof Error ? lastErr.message : String(lastErr)
   throw new Error(
-    `merged.json not found in any known location. Tried: \n${CANDIDATES.join('\n')}.\nLast error: ${lastMsg}`,
+    `merged.json not found. Tried (in order):\n${CANDIDATES.join('\n')}\nLast error: ${lastMsg}`,
   )
 }
 
@@ -61,7 +64,12 @@ async function readMergedJson(filePath: string): Promise<JobItem[]> {
   const validated: JobItem[] = []
   for (const it of arr) {
     const res = JobItemSchema.safeParse(it)
-    if (res.success) validated.push(res.data)
+    if (res.success) {
+      const cleaned = Object.fromEntries(
+        Object.entries(res.data as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      ) as unknown as JobItem
+      validated.push(cleaned)
+    }
   }
   return validated
 }
@@ -93,7 +101,7 @@ export async function getAllJobs(): Promise<JobItem[]> {
       const built = await readMergedFromChunks()
       cache = { jobs: built.jobs, path: 'chunks', version: built.version }
       return built.jobs
-    } catch (e2) {
+    } catch {
       cache = null
       throw e
     }
@@ -153,7 +161,10 @@ async function readMergedFromChunks(): Promise<{ jobs: JobItem[]; version: strin
       const id = res.data.id
       if (seen.has(id)) continue
       seen.add(id)
-      out.push(res.data)
+      const cleaned = Object.fromEntries(
+        Object.entries(res.data as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      ) as unknown as JobItem
+      out.push(cleaned)
     }
   }
   // version derived from chunks stats

@@ -1,12 +1,12 @@
-import { apiGet, buildQueryFromFilters } from '@/shared/http/client'
-import {
-  JobsResult,
-  JobFilters,
+import type {
   AnalyticsResult,
+  EmergingSkillTrendPayload,
+  JobFilters,
+  JobsResult,
   MetaFacets,
   TopSkill,
-  EmergingSkillTrendPayload,
 } from '@/features/jobs/types/types'
+import { apiGet, buildQueryFromFilters } from '@/shared/http/client'
 
 export async function fetchJobs(
   filters: Partial<JobFilters & { page: number; pageSize: number }>,

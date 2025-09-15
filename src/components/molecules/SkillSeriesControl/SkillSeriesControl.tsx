@@ -1,14 +1,14 @@
 'use client'
 
-import { Box, Checkbox, HStack, Text } from '@chakra-ui/react'
 import type { CheckboxCheckedChangeDetails } from '@chakra-ui/react'
+import { Box, Checkbox, HStack, Text } from '@chakra-ui/react'
+
 import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
 
 interface Props {
   options: string[] // available skills
   value: string[] // selected series skills
   onChange: (next: string[]) => void
-  topSkills?: string[] // for reset button
   autoEnabled?: boolean
   onToggleAuto?: (auto: boolean) => void
 }
@@ -17,7 +17,6 @@ export default function SkillSeriesControl({
   options,
   value,
   onChange,
-  topSkills,
   autoEnabled,
   onToggleAuto,
 }: Props) {

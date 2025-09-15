@@ -10,9 +10,11 @@ export default function NotFound() {
       <Text fontSize="sm" color="gray.600">
         La ressource demandée n’existe pas ou a été déplacée.
       </Text>
-      <Button as={Link} href="/" size="sm" variant="outline" colorPalette="brand">
-        Retour à l’accueil
-      </Button>
+      <Link href="/">
+        <Button as="span" size="sm" variant="outline" colorPalette="brand">
+          Retour à l’accueil
+        </Button>
+      </Link>
     </Box>
   )
 }

@@ -1,10 +1,11 @@
 'use client'
 
+import { Box, Button,Dialog, Text } from '@chakra-ui/react'
 import { useEffect } from 'react'
-import { cityToRegion } from '@/shared/geo/regions'
-import { Dialog, Box, Text, Button } from '@chakra-ui/react'
+
 import TagsList from '@/components/atoms/TagsList/TagsList'
 import type { JobItem } from '@/features/jobs/types/types'
+import { cityToRegion } from '@/shared/geo/regions'
 
 interface Props {
   job: JobItem | null

@@ -1,13 +1,15 @@
 'use client'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { JobFilters } from '@/features/jobs/types/types'
+
 import {
+  fetchEmergingSkills,
   fetchJobs,
   fetchMeta,
   fetchMetrics,
   fetchTopSkills,
-  fetchEmergingSkills,
 } from '@/features/jobs/api/endpoints'
+import type { JobFilters } from '@/features/jobs/types/types'
+
 import { queryKeys } from './queryKeys'
 
 export function useMeta() {

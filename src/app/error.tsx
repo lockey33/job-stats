@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Box, Button, Heading, Text } from '@chakra-ui/react'
+import { useEffect } from 'react'
 
 export default function Error({
   error,

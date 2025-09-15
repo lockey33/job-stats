@@ -1,8 +1,10 @@
 import { isAfter, isBefore, parseISO } from 'date-fns'
-import { cityToRegion } from '@/shared/geo/regions'
-import { JobFilters, JobItem, JobsResult, MetaFacets, Pagination } from '../types/types'
-import { norm, normCity } from '@/shared/utils/normalize'
+
 import { itemTjmApprox as approx } from '@/features/jobs/utils/common'
+import { cityToRegion } from '@/shared/geo/regions'
+import { norm, normCity } from '@/shared/utils/normalize'
+
+import type { JobFilters, JobItem, JobsResult, MetaFacets, Pagination } from '../types/types'
 
 function stripHtml(input?: string | null): string {
   if (!input) return ''
@@ -156,7 +158,7 @@ export function computeFacets(jobs: JobItem[]): MetaFacets {
   let maxDate: string | null = null
 
   for (const j of jobs) {
-    ;(j.skills ?? []).forEach((s) => s && skillsSet.add(s))
+    (j.skills ?? []).forEach((s) => s && skillsSet.add(s))
     if (j.city) citiesSet.add(j.city)
     const reg = cityToRegion(j.city)
     if (reg) regionsSet.add(reg)

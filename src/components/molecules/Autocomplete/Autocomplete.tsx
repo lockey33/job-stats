@@ -1,7 +1,8 @@
 'use client'
 
+import { Box, Button,Input } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box, Input, Button } from '@chakra-ui/react'
+
 import SuggestionsList from '@/components/atoms/SuggestionsList/SuggestionsList'
 
 type Normalizer = (s: string) => string

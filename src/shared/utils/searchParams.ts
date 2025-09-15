@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { JobFilters } from '@/features/jobs/types/types'
+
+import type { JobFilters } from '@/features/jobs/types/types'
 
 export const filtersSchema = z.object({
   q: z.string().optional(),
@@ -58,7 +59,12 @@ export function parseFiltersFromSearchParams(
 
   const parsed = filtersSchema.parse(input)
   const { page, pageSize, ...rest } = parsed
-  return { ...rest, page, pageSize }
+  // Remove undefineds to satisfy exactOptionalPropertyTypes
+  const cleaned: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(rest)) {
+    if (typeof v !== 'undefined') cleaned[k] = v
+  }
+  return { ...(cleaned as JobFilters), page, pageSize }
 }
 
 export function toQueryString(

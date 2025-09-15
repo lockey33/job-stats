@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server'
-import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
+import type { NextRequest } from 'next/server'
+
 import { applyFilters, dedupeById } from '@/features/jobs/utils/filtering'
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
+import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
         })
       }
       const encoder = new TextEncoder()
-      const firstRow = jobItemToRow(sorted[0])
+      const firstRow = jobItemToRow(sorted[0]!)
       const headers = Object.keys(firstRow)
       function toCSVValue(val: unknown): string {
         if (val == null) return ''
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
           function pushBatch() {
             const end = Math.min(sorted.length, index + batchSize)
             for (let i = index; i < end; i++) {
-              const row = jobItemToRow(sorted[i])
+              const row = jobItemToRow(sorted[i]!)
               const line = headers.map((h) => toCSVValue(row[h])).join(',') + '\n'
               controller.enqueue(encoder.encode(line))
             }

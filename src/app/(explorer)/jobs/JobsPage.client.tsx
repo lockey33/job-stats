@@ -1,41 +1,32 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import JobDetailsDrawer from '@/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
 const CitySkillTrendView = dynamic(
   () => import('@/components/organisms/CitySkillTrendView/CitySkillTrendView'),
   { ssr: false },
 )
-import { Container, Stack, Heading, Text, Button, Link } from '@chakra-ui/react'
-import { fetchJobs } from '@/features/jobs/api/endpoints'
-import { JobFilters } from '@/features/jobs/types/types'
+import { Button, Container, Heading, Link,Stack, Text } from '@chakra-ui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useExplorerState, type FiltersFormValues } from './hooks/useExplorerState'
-import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api'
-import { JobItem } from '@/features/jobs/types/types'
-import Section from '@/components/molecules/Section/Section'
-import FilterDrawer from '@/components/organisms/FilterDrawer/FilterDrawer'
-import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
-import JobsResultsSection from '@/features/jobs/ui/JobsResultsSection'
-import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
-import { useExport } from '@/features/jobs/hooks/useExport'
-import { queryKeys } from '@/features/jobs/api/queryKeys'
 
-export function ClientJobsPage() {
-  const {
-    form,
-    filters,
-    deferredFilters,
-    page,
-    setPage,
-    pageSize,
-    setPageSize,
-    sortKey,
-    setSortKey,
-    sortOrder,
-    setSortOrder,
-  } = useExplorerState()
+import Section from '@/components/molecules/Section/Section'
+import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
+import FilterDrawer from '@/components/organisms/FilterDrawer/FilterDrawer'
+import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api'
+import { fetchJobs } from '@/features/jobs/api/endpoints'
+import { queryKeys } from '@/features/jobs/api/queryKeys'
+import { useExport } from '@/features/jobs/hooks/useExport'
+import type { JobFilters } from '@/features/jobs/types/types'
+import type { JobItem } from '@/features/jobs/types/types'
+import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
+import JobsResultsSection from '@/features/jobs/ui/JobsResultsSection'
+
+import { type FiltersFormValues,useExplorerState } from './hooks/useExplorerState'
+
+export function JobsPageClient() {
+  const { form, filters, deferredFilters, page, setPage, pageSize, setPageSize, sortKey, setSortKey, sortOrder, setSortOrder } = useExplorerState()
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null)
   const [showSaved, setShowSaved] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -44,12 +35,11 @@ export function ClientJobsPage() {
   const { exporting, exportCurrentPage, exportAllFiltered } = useExport()
   const [trends, setTrends] = useState<TrendsOptions>({
     months: 12,
-    smooth: true,
     topSkillsLimit: 50,
     emergingLimit: 10,
   })
 
-  const { reset, setValue } = form
+  const { reset } = form
   const metaQuery = useMeta()
   const queryClient = useQueryClient()
   const jobsQuery = useJobs({ page, pageSize, filters: deferredFilters as Partial<JobFilters> })
@@ -112,13 +102,7 @@ export function ClientJobsPage() {
     void Promise.allSettled(promises)
   }, [jobs, deferredFilters, pageSize, queryClient])
 
-  const onSearchChange = useCallback(
-    (q: string) => {
-      setValue('q', q || undefined, { shouldDirty: true, shouldTouch: false })
-      setPage(1)
-    },
-    [setValue, setPage],
-  )
+  // keep future-friendly slot for SearchBar to update query
   const onFiltersChange = useCallback(
     (next: FiltersFormValues) => {
       reset(next)
@@ -158,27 +142,28 @@ export function ClientJobsPage() {
   )
 
   function countActiveFilters(f: Partial<JobFilters> | FiltersFormValues): number {
+    const jf = f as Partial<JobFilters>
     let c = 0
     const arr = (v?: unknown) => (Array.isArray(v) ? v.length : 0)
 
-    if ((f as any).q) c++
+    if (typeof jf.q === 'string' && jf.q.trim()) c++
 
-    c += arr((f as any).skills)
-    c += arr((f as any).excludeSkills)
-    c += arr((f as any).excludeTitle)
-    c += arr((f as any).cities)
-    c += arr((f as any).regions)
-    c += arr((f as any).remote)
-    c += arr((f as any).experience)
-    c += arr((f as any).job_slugs)
+    c += arr(jf.skills)
+    c += arr(jf.excludeSkills)
+    c += arr(jf.excludeTitle)
+    c += arr(jf.cities)
+    c += arr(jf.regions)
+    c += arr(jf.remote)
+    c += arr(jf.experience)
+    c += arr(jf.job_slugs)
 
-    if ((f as any).cityMatch === 'exact') c++
-    if ((f as any).excludeCities) c++
-    if ((f as any).excludeRegions) c++
-    if (typeof (f as any).minTjm === 'number') c++
-    if (typeof (f as any).maxTjm === 'number') c++
-    if ((f as any).startDate) c++
-    if ((f as any).endDate) c++
+    if (jf.cityMatch === 'exact') c++
+    if (jf.excludeCities) c++
+    if (jf.excludeRegions) c++
+    if (typeof jf.minTjm === 'number') c++
+    if (typeof jf.maxTjm === 'number') c++
+    if (jf.startDate) c++
+    if (jf.endDate) c++
     return c
   }
 
@@ -199,8 +184,7 @@ export function ClientJobsPage() {
       <Stack as="header" gap="xs" mb="md">
         <Heading size="lg">Job Stats Explorer</Heading>
         <Text fontSize="sm" color="gray.600">
-          Recherchez et filtrez les offres, et explorez les tendances (skills, TJM) à partir de
-          votre dataset fusionné.
+          Recherchez, filtrez et explorez les tendances du marché freelance (compétences, TJM).
         </Text>
       </Stack>
 
@@ -226,9 +210,9 @@ export function ClientJobsPage() {
           onOpenFilters={() => setFiltersOpen(true)}
           showSaved={showSaved}
           onToggleSaved={() => setShowSaved((s) => !s)}
-          sortKey={sortKey as any}
+          {...(sortKey ? { sortKey } : {})}
           sortOrder={sortOrder}
-          onSortChange={onSortChange as any}
+          onSortChange={onSortChange}
           onSelectJob={(it) => setSelectedJob(it)}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
@@ -280,7 +264,7 @@ export function ClientJobsPage() {
           <CitySkillTrendView
             filters={filters as JobFilters}
             meta={meta}
-            defaultSkill={metrics?.topSkills?.[0]}
+            {...(metrics?.topSkills?.[0] ? { defaultSkill: metrics.topSkills[0] } : {})}
           />
         </Section>
       </Stack>

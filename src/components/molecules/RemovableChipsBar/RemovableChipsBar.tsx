@@ -1,6 +1,7 @@
 'use client'
 
 import { Box, Button, HStack } from '@chakra-ui/react'
+
 import CloseableTag from '@/components/atoms/CloseableTag/CloseableTag'
 
 export interface ChipItem {

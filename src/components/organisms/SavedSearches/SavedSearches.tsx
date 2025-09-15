@@ -1,9 +1,10 @@
 'use client'
 
+import { Box, Button, Input, Tag, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
-import { JobFilters } from '@/features/jobs/types/types'
+
+import type { JobFilters } from '@/features/jobs/types/types'
 import { toQueryString } from '@/shared/utils/searchParams'
-import { Box, Input, Button, Tag, Text } from '@chakra-ui/react'
 
 const STORAGE_KEY = 'job-stats:saved-searches:v1'
 

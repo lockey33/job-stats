@@ -1,9 +1,10 @@
-import { NextRequest } from 'next/server'
-import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
+import type { NextRequest } from 'next/server'
+
 import { computeCitySkillTrend } from '@/features/jobs/utils/metrics'
+import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
 import { parseCitySkillParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

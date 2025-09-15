@@ -37,7 +37,7 @@ export default function OpengraphImage() {
           Job Stats Explorer
         </div>
         <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.1, marginBottom: 16 }}>
-          Tendances, Skills, TJM — en un clin d'œil
+          Tendances, compétences, TJM — en un clin d&apos;œil
         </div>
         <div style={{ fontSize: 28, color: '#334155', maxWidth: 900 }}>
           Explorez votre dataset: filtres puissants, graphiques interactifs et exports rapides.

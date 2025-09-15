@@ -1,6 +1,8 @@
 import 'server-only'
+
 import type { MetaFacets } from '@/features/jobs/types/types'
 import { computeFacets } from '@/features/jobs/utils/filtering'
+
 import { getAllJobs, getDatasetVersion } from './repository'
 
 let cache: { version: string; facets: MetaFacets } | null = null

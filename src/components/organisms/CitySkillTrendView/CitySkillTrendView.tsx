@@ -1,33 +1,34 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { JobFilters, MetaFacets } from '@/features/jobs/types/types'
-import { fetchCitySkillTrend } from '@/features/jobs/api/endpoints'
-import Autocomplete from '@/components/molecules/Autocomplete/Autocomplete'
-import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
-import { normCity } from '@/shared/utils/normalize'
-import { useDebounce } from '@/shared/hooks/useDebounce'
 import {
-  ResponsiveContainer,
-  LineChart,
+  Alert,
+  Box,
+  Grid,
+  SliderControl,
+  SliderRange,
+  SliderRoot,
+  SliderThumb,
+  SliderTrack,
+  Text,
+} from '@chakra-ui/react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip as ReTooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip as ReTooltip,
-  Legend,
 } from 'recharts'
-import {
-  Box,
-  Text,
-  Alert,
-  Grid,
-  SliderRoot,
-  SliderTrack,
-  SliderRange,
-  SliderThumb,
-  SliderControl,
-} from '@chakra-ui/react'
+
+import Autocomplete from '@/components/molecules/Autocomplete/Autocomplete'
+import MultiSelect from '@/components/molecules/MultiSelect/MultiSelect'
+import { fetchCitySkillTrend } from '@/features/jobs/api/endpoints'
+import type { JobFilters, MetaFacets } from '@/features/jobs/types/types'
+import { useDebounce } from '@/shared/hooks/useDebounce'
+import { normCity } from '@/shared/utils/normalize'
 
 const COLORS = [
   '#2563eb',
@@ -90,9 +91,10 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       const cities = Object.keys(payload.citySeries)
       const map: Record<string, CityChartDatum> = {}
       for (const city of cities) {
-        for (const pt of payload.citySeries[city]) {
-          if (!map[pt.month]) map[pt.month] = { month: pt.month } as CityChartDatum
-          map[pt.month][city] = pt.value
+        for (const pt of (payload.citySeries[city] ?? [])) {
+          const existing = map[pt.month]
+          const row = existing ?? ((map[pt.month] = { month: pt.month } as CityChartDatum))
+          row[city] = pt.value
         }
       }
       const data = Object.values(map).sort((a, b) => String(a.month).localeCompare(String(b.month)))
@@ -115,7 +117,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {}
     seriesCities.forEach((city, idx) => {
-      map[city] = COLORS[idx % COLORS.length]
+      map[city] = COLORS[idx % COLORS.length]!
     })
     return map
   }, [seriesCities])
@@ -231,13 +233,13 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       <Grid templateColumns={{ base: '1fr', md: 'repeat(12, 1fr)' }} gap="md" alignItems="end">
         <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
           <Text fontSize="sm" fontWeight="medium" mb="xs">
-            Skill
+            Compétence
           </Text>
           <Autocomplete
             options={meta?.skills ?? []}
             value={skill}
             onChange={setSkill}
-            placeholder="Choisir un skill à comparer entre les villes…"
+            placeholder="Choisir une compétence à comparer entre les villes…"
           />
         </Box>
         <Box gridColumn={{ base: '1/-1', md: 'span 6' }}>
@@ -270,10 +272,12 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
                 min={1}
                 max={12}
                 value={[topCityCount]}
-                onValueChange={(d) => setTopCityCount(d.value[0])}
+                onValueChange={(d) => {
+                  const v = Array.isArray(d.value) ? d.value[0] : undefined
+                  if (typeof v === 'number') setTopCityCount(v)
+                }}
                 disabled={selectedCities.length > 0}
                 size="md"
-                aria-label={['Top N villes']}
               >
                 <SliderControl>
                   <SliderTrack h="2" bg="neutral.200" rounded="md">
