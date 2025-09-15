@@ -33,6 +33,13 @@ pnpm run update:data:oldest # pivot from oldest date
 
 The previous `public/merged.json` path is no longer used (file is not exposed publicly).
 
+## Refactor: 2025-ready highlights
+
+- SSR + Hydration: the `/jobs` page parses `searchParams` on the server, pre-computes queries (meta, jobs page, metrics, top skills, emerging) with QueryClient and hydrates a client-only UI.
+- Caching: API routes return strong ETag-based caching and 304 when parameters/data-version match.
+- Code style: Prettier with no semicolons enforced + ESLint rules (unused imports, sorted imports). Run `pnpm run format`.
+- Server boundaries: server modules used directly in SSR (no internal HTTP calls), and `server-only` on env.
+
 ### Architecture rapide
 
 - Front (App Router): pages dans `src/app/*`, composants UI atomiques → molécules → organismes dans `src/components/*`.

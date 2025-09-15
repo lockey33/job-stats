@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
 import { applyFilters, paginate, dedupeById } from '@/features/jobs/utils/filtering'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
-import { stableStringify } from '@/shared/utils/stableStringify'
+import { buildEtag } from '@/shared/react-query/keys'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     const result = paginate(sorted, { page, pageSize })
 
-    const etag = `W/"${version}|${stableStringify({ page, pageSize, filters })}"`
+    const etag = buildEtag(version, 'jobs', { page, pageSize, ...filters })
     const inm = req.headers.get('if-none-match') || ''
     if (inm === etag) {
       return new Response(null, { status: 304, headers: { ETag: etag } })

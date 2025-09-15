@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import ClientJobsPage from './ClientJobsPage'
+import { ClientJobsPage } from './JobsPage.client'
 import { queryKeys } from '@/features/jobs/api/queryKeys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { getAllJobs } from '@/server/jobs/repository'

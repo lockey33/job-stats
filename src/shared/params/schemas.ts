@@ -1,4 +1,3 @@
-import 'server-only'
 import { z } from 'zod'
 
 const csvToArray = (raw: string | null | undefined): string[] | undefined => {
@@ -64,3 +63,4 @@ export function parseCitySkillParams(searchParams: URLSearchParams) {
   }
   return schema.parse(input)
 }
+

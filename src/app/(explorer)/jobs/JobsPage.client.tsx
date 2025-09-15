@@ -22,7 +22,7 @@ import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
 import { useExport } from '@/features/jobs/hooks/useExport'
 import { queryKeys } from '@/features/jobs/api/queryKeys'
 
-export default function ClientJobsPage() {
+export function ClientJobsPage() {
   const {
     form,
     filters,

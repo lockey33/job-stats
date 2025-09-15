@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { getMetricsCached } from '@/server/jobs/analytics'
-import { parseMetricsParams } from '@/server/api/schemas'
+import { parseMetricsParams } from '@/shared/params/schemas'
 import { getDatasetVersion } from '@/server/jobs/repository'
-import { stableStringify } from '@/shared/utils/stableStringify'
+import { buildEtag } from '@/shared/react-query/keys'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       getDatasetVersion(),
     ])
 
-    const etag = `W/"${version}|${stableStringify({ filters, topSkillsCount, seriesSkills })}"`
+    const etag = buildEtag(version, 'metrics', { ...filters, topSkillsCount, seriesSkills })
     const inm = req.headers.get('if-none-match') || ''
     if (inm === etag) return new Response(null, { status: 304, headers: { ETag: etag } })
 

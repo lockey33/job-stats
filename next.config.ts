@@ -2,8 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Lint errors do not block builds while migrating to no-semicolons
-    ignoreDuringBuilds: true,
+    // Enforce ESLint during builds for code quality
+    ignoreDuringBuilds: false,
   },
 }
 

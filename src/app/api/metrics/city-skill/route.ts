@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server'
 import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { computeCitySkillTrend } from '@/features/jobs/utils/metrics'
-import { parseCitySkillParams } from '@/server/api/schemas'
-import { stableStringify } from '@/shared/utils/stableStringify'
+import { parseCitySkillParams } from '@/shared/params/schemas'
+import { buildEtag } from '@/shared/react-query/keys'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const [jobs, version] = await Promise.all([getAllJobs(), getDatasetVersion()])
     const result = computeCitySkillTrend(jobs, filters, skill, seriesCities, topCityCount)
 
-    const etag = `W/"${version}|${stableStringify({ filters, skill, seriesCities, topCityCount })}"`
+    const etag = buildEtag(version, 'city-skill', { ...filters, skill, seriesCities, topCityCount })
     const inm = req.headers.get('if-none-match') || ''
     if (inm === etag) return new Response(null, { status: 304, headers: { ETag: etag } })
 
