@@ -1,14 +1,15 @@
 'use client'
 
+import { CacheProvider } from '@chakra-ui/next-js/emotion-cache-provider'
 import { ChakraProvider } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
-import React, { Suspense } from 'react'
+import React, { Suspense, useState } from 'react'
 
 import { system } from '@/theme/system'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(
+  const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
@@ -21,12 +22,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }),
   )
   return (
-    <ChakraProvider value={system}>
-      <QueryClientProvider client={queryClient}>
-        <Suspense>
-          <NuqsAdapter>{children}</NuqsAdapter>
-        </Suspense>
-      </QueryClientProvider>
-    </ChakraProvider>
+    <CacheProvider>
+      <ChakraProvider value={system}>
+        <QueryClientProvider client={queryClient}>
+          <Suspense>
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </Suspense>
+        </QueryClientProvider>
+      </ChakraProvider>
+    </CacheProvider>
   )
 }
+

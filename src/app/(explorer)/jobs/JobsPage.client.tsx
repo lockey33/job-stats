@@ -8,7 +8,7 @@ const CitySkillTrendView = dynamic(
   () => import('@/components/organisms/CitySkillTrendView/CitySkillTrendView'),
   { ssr: false },
 )
-import { Button, Container, Heading, Link,Stack, Text } from '@chakra-ui/react'
+import { Button, Container, Heading, Link, Stack, Text } from '@chakra-ui/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Section from '@/components/molecules/Section/Section'
@@ -23,10 +23,22 @@ import type { JobItem } from '@/features/jobs/types/types'
 import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
 import JobsResultsSection from '@/features/jobs/ui/JobsResultsSection'
 
-import { type FiltersFormValues,useExplorerState } from './hooks/useExplorerState'
+import { type FiltersFormValues, useExplorerState } from './hooks/useExplorerState'
 
 export function JobsPageClient() {
-  const { form, filters, deferredFilters, page, setPage, pageSize, setPageSize, sortKey, setSortKey, sortOrder, setSortOrder } = useExplorerState()
+  const {
+    form,
+    filters,
+    deferredFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    sortKey,
+    setSortKey,
+    sortOrder,
+    setSortOrder,
+  } = useExplorerState()
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null)
   const [showSaved, setShowSaved] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)

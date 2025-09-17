@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Button, Drawer, Stack,Text } from '@chakra-ui/react'
+import { Box, Button, Drawer, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { CloseIcon } from '@/components/atoms/Icons/Icons'

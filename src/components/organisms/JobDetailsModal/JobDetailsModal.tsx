@@ -1,11 +1,12 @@
 'use client'
 
-import { Box, Button,Dialog, Text } from '@chakra-ui/react'
+import { Box, Button, Dialog, Text } from '@chakra-ui/react'
 import { useEffect } from 'react'
 
 import TagsList from '@/components/atoms/TagsList/TagsList'
 import type { JobItem } from '@/features/jobs/types/types'
 import { cityToRegion } from '@/shared/geo/regions'
+import { decodeHtmlEntities, htmlToPlainText } from '@/shared/utils/text'
 
 interface Props {
   job: JobItem | null
@@ -48,13 +49,7 @@ function formatRemote(remote?: string | null): string {
   }
 }
 
-function stripHtml(input?: string | null) {
-  if (!input) return ''
-  return input
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+// replaced by htmlToPlainText from shared utils
 
 export default function JobDetailsModal({ job, onClose }: Props) {
   useEffect(() => {
@@ -80,7 +75,9 @@ export default function JobDetailsModal({ job, onClose }: Props) {
       <Dialog.Positioner>
         <Dialog.Content maxW="3xl">
           <Dialog.Header>
-            <Dialog.Title>{job?.title ?? job?.slug ?? job?.job_slug ?? 'Offre'}</Dialog.Title>
+            <Dialog.Title>
+              {decodeHtmlEntities(job?.title ?? job?.slug ?? job?.job_slug ?? 'Offre')}
+            </Dialog.Title>
             <Dialog.CloseTrigger asChild>
               <Button size="xs" variant="outline" onClick={onClose} aria-label="Fermer">
                 ✕
@@ -164,7 +161,7 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                       Description
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.description) || '—'}
+                      {htmlToPlainText(job.description) || '—'}
                     </Text>
                   </Box>
                   <Box>
@@ -172,7 +169,7 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                       Profil recherché
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.candidate_profile) || '—'}
+                      {htmlToPlainText(job.candidate_profile) || '—'}
                     </Text>
                   </Box>
                   <Box>
@@ -180,7 +177,7 @@ export default function JobDetailsModal({ job, onClose }: Props) {
                       À propos
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.company_description) || '—'}
+                      {htmlToPlainText(job.company_description) || '—'}
                     </Text>
                   </Box>
                 </Box>

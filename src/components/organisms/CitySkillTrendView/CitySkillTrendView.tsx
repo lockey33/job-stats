@@ -10,6 +10,7 @@ import {
   SliderThumb,
   SliderTrack,
   Text,
+  useBreakpointValue,
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -52,6 +53,7 @@ interface Props {
 }
 
 export default function CitySkillTrendView({ filters, meta, defaultSkill }: Props) {
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
   const [skill, setSkill] = useState<string>(defaultSkill || '')
   const [selectedCities, setSelectedCities] = useState<string[]>([])
   const [topCityCount, setTopCityCount] = useState<number>(5)
@@ -91,9 +93,9 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       const cities = Object.keys(payload.citySeries)
       const map: Record<string, CityChartDatum> = {}
       for (const city of cities) {
-        for (const pt of (payload.citySeries[city] ?? [])) {
+        for (const pt of payload.citySeries[city] ?? []) {
           const existing = map[pt.month]
-          const row = existing ?? ((map[pt.month] = { month: pt.month } as CityChartDatum))
+          const row = existing ?? (map[pt.month] = { month: pt.month } as CityChartDatum)
           row[city] = pt.value
         }
       }
@@ -327,11 +329,15 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
           <Text fontSize="sm" fontWeight="semibold" mb="xs">
             Skill « {skill} » par ville (par mois)
           </Text>
-          <Box h="24rem">
+          <Box h={{ base: '20rem', md: '24rem' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis
+                  dataKey="month"
+                  interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
+                  tick={isMobile ? false : true}
+                />
                 <YAxis allowDecimals={false} />
                 <ReTooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />

@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Table,Text } from '@chakra-ui/react'
+import { Box, Table, Text } from '@chakra-ui/react'
 import { format } from 'date-fns'
 import { useMemo } from 'react'
 
@@ -132,10 +132,10 @@ export default function ResultsTable({
         borderTopWidth="1px"
         borderColor="neutral.200"
       >
-        <Table.Root size="sm">
+        <Table.Root size="sm" tableLayout="fixed">
           <Table.Header bg="neutral.50" position="sticky" top={0} zIndex={1}>
             <Table.Row>
-              <Table.ColumnHeader aria-sort={ariaSort('title')}>
+              <Table.ColumnHeader aria-sort={ariaSort('title')} w="34%">
                 <SortHeader
                   label="Titre"
                   active={sortKey === 'title'}
@@ -148,7 +148,7 @@ export default function ResultsTable({
                   }
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader aria-sort={ariaSort('company')}>
+              <Table.ColumnHeader aria-sort={ariaSort('company')} w="18%">
                 <SortHeader
                   label="Entreprise"
                   active={sortKey === 'company'}
@@ -161,7 +161,7 @@ export default function ResultsTable({
                   }
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader aria-sort={ariaSort('city')}>
+              <Table.ColumnHeader aria-sort={ariaSort('city')} w="10%">
                 <SortHeader
                   label="Ville"
                   active={sortKey === 'city'}
@@ -174,7 +174,7 @@ export default function ResultsTable({
                   }
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader aria-sort={ariaSort('experience')}>
+              <Table.ColumnHeader aria-sort={ariaSort('experience')} w="8%">
                 <SortHeader
                   label="Exp."
                   active={sortKey === 'experience'}
@@ -187,7 +187,7 @@ export default function ResultsTable({
                   }
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader aria-sort={ariaSort('tjm')}>
+              <Table.ColumnHeader aria-sort={ariaSort('tjm')} w="12%">
                 <SortHeader
                   label="TJM"
                   active={sortKey === 'tjm'}
@@ -197,8 +197,8 @@ export default function ResultsTable({
                   }
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader>Skills</Table.ColumnHeader>
-              <Table.ColumnHeader aria-sort={ariaSort('date')}>
+              <Table.ColumnHeader w="10%">Skills</Table.ColumnHeader>
+              <Table.ColumnHeader aria-sort={ariaSort('date')} w="8%" minW="8rem">
                 <SortHeader
                   label="Date"
                   active={sortKey === 'date'}
@@ -240,8 +240,8 @@ export default function ResultsTable({
                   <Text
                     as="span"
                     fontWeight="medium"
-                    display="inline-block"
-                    maxW="48ch"
+                    display="block"
+                    maxW="100%"
                     whiteSpace="nowrap"
                     overflow="hidden"
                     textOverflow="ellipsis"
@@ -252,8 +252,8 @@ export default function ResultsTable({
                 <Table.Cell>
                   <Text
                     as="span"
-                    display="inline-block"
-                    maxW="28ch"
+                    display="block"
+                    maxW="100%"
                     whiteSpace="nowrap"
                     overflow="hidden"
                     textOverflow="ellipsis"
@@ -264,8 +264,8 @@ export default function ResultsTable({
                 <Table.Cell>
                   <Text
                     as="span"
-                    display="inline-block"
-                    maxW="18ch"
+                    display="block"
+                    maxW="100%"
                     whiteSpace="nowrap"
                     overflow="hidden"
                     textOverflow="ellipsis"
@@ -276,7 +276,8 @@ export default function ResultsTable({
                 <Table.Cell>
                   <Text
                     as="span"
-                    display="inline-block"
+                    display="block"
+                    maxW="100%"
                     whiteSpace="nowrap"
                     overflow="hidden"
                     textOverflow="ellipsis"
@@ -286,7 +287,14 @@ export default function ResultsTable({
                 </Table.Cell>
                 <Table.Cell>
                   {it.min_tjm || it.max_tjm ? (
-                    <Text as="span">
+                    <Text
+                      as="span"
+                      display="block"
+                      maxW="100%"
+                      whiteSpace="nowrap"
+                      overflow="hidden"
+                      textOverflow="ellipsis"
+                    >
                       {new Intl.NumberFormat('fr-FR').format(it.min_tjm ?? it.max_tjm ?? 0)}
                       {it.max_tjm ? `–${new Intl.NumberFormat('fr-FR').format(it.max_tjm)}` : ''} €
                     </Text>
@@ -295,9 +303,15 @@ export default function ResultsTable({
                   )}
                 </Table.Cell>
                 <Table.Cell>
-                  <TagsList items={(it.skills ?? []).slice(0, 6)} colorPalette="brand" />
+                  <Box maxW="100%" overflow="hidden">
+                    <TagsList items={(it.skills ?? []).slice(0, 4)} colorPalette="brand" />
+                  </Box>
                 </Table.Cell>
-                <Table.Cell>{formatDate(it.created_at)}</Table.Cell>
+                <Table.Cell whiteSpace="nowrap" minW="8rem">
+                  <Text as="span" display="block" maxW="100%" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">
+                    {formatDate(it.created_at)}
+                  </Text>
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>

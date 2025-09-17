@@ -1,9 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { parseAsInteger, parseAsString,useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
 import { useDeferredValue, useEffect } from 'react'
-import { type Resolver,useForm, useWatch } from 'react-hook-form'
+import { type Resolver, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 
 import { filtersSchema } from '@/shared/utils/searchParams'

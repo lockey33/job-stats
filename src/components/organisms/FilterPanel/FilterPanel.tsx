@@ -364,23 +364,24 @@ export default function FilterPanel({
             Date de début
           </Text>
           <DatePicker
-              selected={ymdToDate(value.startDate)}
-              onChange={(d: Date | null) => {
-                const sv = dateToYmd(d)
-                if (sv) update({ startDate: sv })
-                else update({})
-              }}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Choisir une date"
-              isClearable
-              maxDate={ymdToDate(value.endDate) ?? null}
-              selectsStart
-              startDate={ymdToDate(value.startDate) ?? null}
-              endDate={ymdToDate(value.endDate) ?? null}
-              todayButton="Aujourd’hui"
-              locale={fr}
-              customInput={<ChakraDateInput />}
-            />
+            selected={ymdToDate(value.startDate)}
+            onChange={(d: Date | null) => {
+              const sv = dateToYmd(d)
+              if (sv) update({ startDate: sv })
+              else update({})
+            }}
+            dateFormat="yyyy-MM-dd"
+            placeholderText="Choisir une date"
+            isClearable
+            maxDate={ymdToDate(value.endDate) ?? null}
+            selectsStart
+            startDate={ymdToDate(value.startDate) ?? null}
+            endDate={ymdToDate(value.endDate) ?? null}
+            todayButton="Aujourd’hui"
+            locale={fr}
+            customInput={<ChakraDateInput />}
+            {...(compact ? { withPortal: true } : {})}
+          />
         </Box>
 
         <Box gridColumn={gc('span 3')}>
@@ -388,23 +389,24 @@ export default function FilterPanel({
             Date de fin
           </Text>
           <DatePicker
-              selected={ymdToDate(value.endDate)}
-              onChange={(d: Date | null) => {
-                const ev = dateToYmd(d)
-                if (ev) update({ endDate: ev })
-                else update({})
-              }}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Choisir une date"
-              isClearable
-              minDate={ymdToDate(value.startDate) ?? null}
-              selectsEnd
-              startDate={ymdToDate(value.startDate) ?? null}
-              endDate={ymdToDate(value.endDate) ?? null}
-              todayButton="Aujourd’hui"
-              locale={fr}
-              customInput={<ChakraDateInput />}
-            />
+            selected={ymdToDate(value.endDate)}
+            onChange={(d: Date | null) => {
+              const ev = dateToYmd(d)
+              if (ev) update({ endDate: ev })
+              else update({})
+            }}
+            dateFormat="yyyy-MM-dd"
+            placeholderText="Choisir une date"
+            isClearable
+            minDate={ymdToDate(value.startDate) ?? null}
+            selectsEnd
+            startDate={ymdToDate(value.startDate) ?? null}
+            endDate={ymdToDate(value.endDate) ?? null}
+            todayButton="Aujourd’hui"
+            locale={fr}
+            customInput={<ChakraDateInput />}
+            {...(compact ? { withPortal: true } : {})}
+          />
         </Box>
       </Grid>
     </Box>

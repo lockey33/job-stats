@@ -1,10 +1,11 @@
 'use client'
 
-import { Box, Button,Drawer, Text } from '@chakra-ui/react'
+import { Box, Button, Drawer, Text } from '@chakra-ui/react'
 
 import TagsList from '@/components/atoms/TagsList/TagsList'
 import type { JobItem } from '@/features/jobs/types/types'
 import { cityToRegion } from '@/shared/geo/regions'
+import { decodeHtmlEntities, htmlToPlainText } from '@/shared/utils/text'
 
 interface Props {
   job: JobItem | null
@@ -19,13 +20,7 @@ function formatTjm(min?: number | null, max?: number | null) {
   return `${fmt(v)} €`
 }
 
-function stripHtml(input?: string | null) {
-  if (!input) return ''
-  return input
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+// replaced by htmlToPlainText from shared utils
 
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase()
@@ -57,12 +52,13 @@ function formatRemote(remote?: string | null): string {
 
 export default function JobDetailsDrawer({ job, onClose }: Props) {
   const open = !!job
-  const title = job?.title ?? job?.slug ?? job?.job_slug ?? 'Offre'
+  const title = decodeHtmlEntities(job?.title ?? job?.slug ?? job?.job_slug ?? 'Offre')
   const region = job ? (cityToRegion(job.city ?? undefined) ?? '—') : '—'
 
   return (
     <Drawer.Root
       open={open}
+      size="lg"
       placement="end"
       onOpenChange={(e) => {
         if (!e.open) onClose()
@@ -70,7 +66,7 @@ export default function JobDetailsDrawer({ job, onClose }: Props) {
     >
       <Drawer.Backdrop />
       <Drawer.Positioner>
-        <Drawer.Content maxW={{ base: '100%', md: '34rem' }}>
+        <Drawer.Content maxW={{ base: '100%', md: '42rem', lg: '56rem' }}>
           <Drawer.Header borderBottomWidth="1px" borderColor="border">
             <Drawer.Title>{title}</Drawer.Title>
             <Drawer.CloseTrigger asChild>
@@ -156,7 +152,7 @@ export default function JobDetailsDrawer({ job, onClose }: Props) {
                       Description
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.description) || '—'}
+                      {htmlToPlainText(job.description) || '—'}
                     </Text>
                   </Box>
                   <Box>
@@ -164,7 +160,7 @@ export default function JobDetailsDrawer({ job, onClose }: Props) {
                       Profil recherché
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.candidate_profile) || '—'}
+                      {htmlToPlainText(job.candidate_profile) || '—'}
                     </Text>
                   </Box>
                   <Box>
@@ -172,7 +168,7 @@ export default function JobDetailsDrawer({ job, onClose }: Props) {
                       À propos
                     </Text>
                     <Text fontSize="sm" whiteSpace="pre-line" lineHeight="tall">
-                      {stripHtml(job.company_description) || '—'}
+                      {htmlToPlainText(job.company_description) || '—'}
                     </Text>
                   </Box>
                 </Box>

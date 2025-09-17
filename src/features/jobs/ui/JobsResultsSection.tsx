@@ -10,6 +10,7 @@ import ResultsToolbar from '@/components/molecules/ResultsToolbar/ResultsToolbar
 import Section from '@/components/molecules/Section/Section'
 import ResultsSkeleton from '@/components/organisms/ResultsSkeleton/ResultsSkeleton'
 import ResultsTable from '@/components/organisms/ResultsTable/ResultsTable'
+import ResultsListMobile from '@/components/organisms/ResultsTable/ResultsListMobile'
 import SavedSearches from '@/components/organisms/SavedSearches/SavedSearches'
 import type { JobFilters, JobItem, JobsResult } from '@/features/jobs/types/types'
 
@@ -131,37 +132,75 @@ export default function JobsResultsSection(props: Props) {
         borderColor="border"
         py="xs"
       >
-        <ResultsToolbar
-          total={jobs.total}
-          exporting={exporting}
-          onExportCurrentPage={onExportCurrentPage}
-          onExportAllFiltered={onExportAllFiltered}
-          leftSlot={
-            <Button size="md" variant="outline" colorPalette="brand" onClick={onOpenFilters}>
-              <FilterIcon boxSize="1.25em" />
+      <ResultsToolbar
+        total={jobs.total}
+        exporting={exporting}
+        onExportCurrentPage={onExportCurrentPage}
+        onExportAllFiltered={onExportAllFiltered}
+        rightActionLabel={showSaved ? 'Masquer les recherches enregistrées' : 'Recherches enregistrées'}
+        onRightAction={onToggleSaved}
+        leftSlot={
+          <Button
+            size={{ base: 'sm', md: 'md' }}
+            variant="outline"
+            colorPalette="brand"
+            onClick={onOpenFilters}
+            aria-label={
+              activeFiltersCount > 0 ? `Filtrer (${activeFiltersCount})` : 'Filtrer'
+            }
+            title={activeFiltersCount > 0 ? `Filtrer (${activeFiltersCount})` : 'Filtrer'}
+          >
+            <FilterIcon boxSize="1.25em" />
+            <Text as="span" display={{ base: 'none', md: 'inline' }}>
               {activeFiltersCount > 0 ? `Filtrer (${activeFiltersCount})` : 'Filtrer'}
-            </Button>
-          }
-          rightSlot={
-            <Button size="md" variant="outline" onClick={onToggleSaved}>
-              <StarIcon boxSize="1.25em" />
-              {showSaved ? 'Masquer les recherches enregistrées' : 'Recherches enregistrées'}
-            </Button>
-          }
-        />
+            </Text>
+          </Button>
+        }
+        rightSlot={
+          <Button
+            size={{ base: 'sm', md: 'md' }}
+            variant="outline"
+            onClick={onToggleSaved}
+            aria-label={
+              showSaved
+                ? 'Masquer les recherches enregistrées'
+                : 'Recherches enregistrées'
+            }
+            title={
+              showSaved
+                ? 'Masquer les recherches enregistrées'
+                : 'Recherches enregistrées'
+            }
+          >
+            <StarIcon boxSize="1.25em" />
+            <Text as="span" display={{ base: 'inline', md: 'inline' }}>
+              {showSaved
+                ? 'Masquer les recherches enregistrées'
+                : 'Recherches enregistrées'}
+            </Text>
+          </Button>
+        }
+      />
       </Box>
       {showSaved && (
         <Box mt="sm">
           <SavedSearches currentFilters={filters} onApply={(f) => onFiltersChange(f)} />
         </Box>
       )}
-      <ResultsTable
-        items={jobs.items}
-        {...(sortKey ? { sortKey } : {})}
-        sortOrder={sortOrder}
-        onSortChange={onSortChange}
-        onSelect={onSelectJob}
-      />
+      {/* Mobile cards */}
+      <Box display={{ base: 'block', md: 'none' }}>
+        <ResultsListMobile items={jobs.items} onSelect={onSelectJob} />
+      </Box>
+      {/* Desktop table */}
+      <Box display={{ base: 'none', md: 'block' }}>
+        <ResultsTable
+          items={jobs.items}
+          {...(sortKey ? { sortKey } : {})}
+          sortOrder={sortOrder}
+          onSortChange={onSortChange}
+          onSelect={onSelectJob}
+        />
+      </Box>
       <Pagination
         page={jobs.page}
         pageSize={jobs.pageSize}

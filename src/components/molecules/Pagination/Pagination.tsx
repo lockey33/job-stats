@@ -10,7 +10,7 @@ interface Props {
   onPageSizeChange?: (size: number) => void
 }
 
-import { Button, HStack, Input,Text } from '@chakra-ui/react'
+import { Box, Button, HStack, Input, Text } from '@chakra-ui/react'
 
 export default function Pagination({
   page,
@@ -24,12 +24,24 @@ export default function Pagination({
   const start = (page - 1) * pageSize + 1
   const end = Math.min(total, page * pageSize)
   return (
-    <HStack align="center" justify="space-between" mt="sm" fontSize="sm">
-      <HStack gap="md" align="center">
+    <Box
+      role="navigation"
+      aria-label="Pagination"
+      display="flex"
+      flexDirection={{ base: 'column', md: 'row' }}
+      gap={{ base: 'sm', md: 'md' }}
+      alignItems={{ base: 'stretch', md: 'center' }}
+      justifyContent="space-between"
+      mt="sm"
+      fontSize="sm"
+    >
+      <HStack gap="md" align="center" justify="flex-start" wrap="wrap">
         <Text color="gray.600" role="status" aria-live="polite">
           Résultats {start.toLocaleString()}–{end.toLocaleString()} sur {total.toLocaleString()}
         </Text>
-        <HStack gap="xs" align="center">
+
+        {/* Page size options: visible from md and up */}
+        <HStack gap="xs" align="center" display={{ base: 'none', md: 'flex' }}>
           <Text color="gray.600">Par page</Text>
           <HStack gap="xs">
             {pageSizeOptions.map((opt) => {
@@ -47,7 +59,9 @@ export default function Pagination({
             })}
           </HStack>
         </HStack>
-        <HStack gap="xs" align="center">
+
+        {/* Jump to page: visible from md and up */}
+        <HStack gap="xs" align="center" display={{ base: 'none', md: 'flex' }}>
           <Text color="gray.600">Aller à</Text>
           <Input
             aria-label="Aller à la page"
@@ -65,9 +79,15 @@ export default function Pagination({
           />
         </HStack>
       </HStack>
-      <HStack gap="sm" align="center">
+
+      {/* Prev / Next controls */}
+      <HStack gap="sm" align="center" justify="flex-end" wrap="wrap">
+        {/* Mobile page indicator */}
+        <Text display={{ base: 'inline', md: 'none' }} color="gray.700">
+          Page {page} / {pageCount}
+        </Text>
         <Button
-          size="sm"
+          size={{ base: 'sm', md: 'sm' }}
           variant="outline"
           onClick={() => onPageChange(Math.max(1, page - 1))}
           disabled={page <= 1}
@@ -76,7 +96,7 @@ export default function Pagination({
           Précédent
         </Button>
         <Button
-          size="sm"
+          size={{ base: 'sm', md: 'sm' }}
           variant="outline"
           onClick={() => onPageChange(Math.min(pageCount, page + 1))}
           disabled={page >= pageCount}
@@ -85,6 +105,6 @@ export default function Pagination({
           Suivant
         </Button>
       </HStack>
-    </HStack>
+    </Box>
   )
 }

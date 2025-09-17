@@ -25,6 +25,7 @@ export default function Section({ id, title, subtitle, actions, children }: Prop
       {hasHeader && (
         <Box
           display="flex"
+          flexDirection={{ base: 'column', md: 'row' }}
           alignItems={{ base: 'flex-start', md: 'center' }}
           justifyContent="space-between"
           gap="sm"
@@ -45,7 +46,7 @@ export default function Section({ id, title, subtitle, actions, children }: Prop
             )}
           </Box>
           {actions && (
-            <Box display="flex" alignItems="center" gap="sm">
+            <Box display="flex" alignItems="center" gap="sm" mt={{ base: 'xs', md: 0 }}>
               {actions}
             </Box>
           )}

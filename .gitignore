@@ -3,6 +3,8 @@
 /src/data
 /scripts
 
+.env
+
 # data outputs
 /var/**
 

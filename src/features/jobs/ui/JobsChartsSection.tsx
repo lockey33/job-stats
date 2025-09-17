@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, Box, Button,Stack } from '@chakra-ui/react'
+import { Alert, Box, Button, Stack } from '@chakra-ui/react'
 import dynamic from 'next/dynamic'
 
 import LoadingOverlay from '@/components/atoms/LoadingOverlay/LoadingOverlay'
@@ -118,7 +118,7 @@ export default function JobsChartsSection({
             ) : null
           }
         />
-        
+
         <Box as="hr" borderTopWidth="1px" borderColor="border" my="md" />
 
         {/* Top compétences: contrôle local sous le titre */}

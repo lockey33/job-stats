@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Text, useBreakpointValue } from '@chakra-ui/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import {
@@ -37,6 +37,7 @@ const COLORS = [
 
 export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }: Props) {
   if (!payload || !payload.trends || payload.trends.length === 0) return null
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
 
   const months = payload.months
   // Keep only top N trends by slope
@@ -143,11 +144,16 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
         </Text>
         {controlSlot ? <Box>{controlSlot}</Box> : null}
       </Box>
-      <Box h="20rem">
+      <Box h={{ base: '18rem', md: '20rem' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+          <LineChart data={data} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" tickFormatter={fmtMonth} />
+            <XAxis
+              dataKey="month"
+              tickFormatter={fmtMonth}
+              interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
+              tick={isMobile ? false : true}
+            />
             <YAxis allowDecimals={false} />
             <Tooltip content={<CustomTooltip />} wrapperStyle={{ zIndex: 1000 }} />
             <Legend content={<CustomLegend />} />

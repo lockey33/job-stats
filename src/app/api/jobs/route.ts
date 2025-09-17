@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server'
 
-import { applyFilters, dedupeById,paginate } from '@/features/jobs/utils/filtering'
+import { applyFilters, dedupeById, paginate } from '@/features/jobs/utils/filtering'
 import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'

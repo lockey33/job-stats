@@ -1,7 +1,7 @@
 'use client'
 
 import { Box, Input } from '@chakra-ui/react'
-import { useEffect,useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useDebounce } from '@/shared/hooks/useDebounce'
 
@@ -37,7 +37,7 @@ export default function SearchBar({
         value={text}
         onChange={(e) => setText(e.target.value)}
         aria-label="Recherche"
-        size="md"
+        size={{ base: 'sm', md: 'md' }}
         bg="white"
         shadow="sm"
         borderColor="neutral.200"

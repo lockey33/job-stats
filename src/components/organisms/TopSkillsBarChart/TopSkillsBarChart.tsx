@@ -1,7 +1,7 @@
 'use client'
 
-import { Box, Text } from '@chakra-ui/react'
-import { Bar, BarChart, CartesianGrid,ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Box, Text, useBreakpointValue } from '@chakra-ui/react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import type { TopSkill } from '@/features/jobs/types/types'
 
@@ -14,6 +14,7 @@ interface Props {
 export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: Props) {
   if (!data || data.length === 0) return null
   const chartData = data.slice(0, maxItems).map((d) => ({ name: d.skill, value: d.count }))
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
   type TipItem = { value?: number }
   function CustomTooltip({
     active,
@@ -43,11 +44,21 @@ export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: 
         </Text>
         {controlSlot ? <Box>{controlSlot}</Box> : null}
       </Box>
-      <Box h="24rem">
+      <Box h={{ base: '18rem', md: '24rem' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 0 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 10, right: 16, bottom: isMobile ? 10 : 40, left: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-45} textAnchor="end" interval={0} height={80} />
+            <XAxis
+              dataKey="name"
+              angle={isMobile ? 0 : -45}
+              textAnchor={isMobile ? 'middle' : 'end'}
+              interval={isMobile ? 'preserveStartEnd' : 0}
+              height={isMobile ? 16 : 80}
+              tick={isMobile ? false : true}
+            />
             <YAxis allowDecimals={false} />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="value" fill="#3b82f6" />

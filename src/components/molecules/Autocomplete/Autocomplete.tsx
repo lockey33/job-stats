@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Button,Input } from '@chakra-ui/react'
+import { Box, Button, Input } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import SuggestionsList from '@/components/atoms/SuggestionsList/SuggestionsList'

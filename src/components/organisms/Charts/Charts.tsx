@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Text, useBreakpointValue } from '@chakra-ui/react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import React from 'react'
@@ -41,6 +41,7 @@ interface Props {
 
 export default function Charts({ metrics, months = 12, mode = 'basics', controlSlot }: Props) {
   const [hidden, setHidden] = React.useState<string[]>([])
+  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
   if (!metrics) return null
 
   const fmtMonth = (m: string) => {
@@ -170,14 +171,19 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
           <Text fontSize="sm" fontWeight="semibold" mb="sm">
             Nombre d’offres par mois
           </Text>
-          <Box h="16rem">
+          <Box h={{ base: '14rem', md: '16rem' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={postingsPerMonth}
-                margin={{ top: 10, right: 20, bottom: 0, left: 0 }}
+                margin={{ top: 10, right: 16, bottom: isMobile ? 0 : 0, left: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tickFormatter={fmtMonth} />
+                <XAxis
+                  dataKey="month"
+                  tickFormatter={fmtMonth}
+                  interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
+                  tick={isMobile ? false : true}
+                />
                 <YAxis allowDecimals={false} />
                 <Tooltip content={<SimpleTooltip unit="offres" />} />
                 <Line
@@ -195,11 +201,16 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
           <Text fontSize="sm" fontWeight="semibold" mb="sm">
             TJM moyen par mois (€)
           </Text>
-          <Box h="16rem">
+          <Box h={{ base: '14rem', md: '16rem' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={avgTjmPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+              <LineChart data={avgTjmPerMonth} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tickFormatter={fmtMonth} />
+                <XAxis
+                  dataKey="month"
+                  tickFormatter={fmtMonth}
+                  interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
+                  tick={isMobile ? false : true}
+                />
                 <YAxis />
                 <Tooltip content={<SimpleTooltip unit="€" />} />
                 <Line
@@ -228,11 +239,16 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
         masquer/afficher une série.
       </Text>
       {controlSlot ? <Box mb="sm">{controlSlot}</Box> : null}
-      <Box h="20rem">
+      <Box h={{ base: '18rem', md: '20rem' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={skillsPerMonth} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+          <LineChart data={skillsPerMonth} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" tickFormatter={fmtMonth} />
+            <XAxis
+              dataKey="month"
+              tickFormatter={fmtMonth}
+              interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
+              tick={isMobile ? false : true}
+            />
             <YAxis allowDecimals={false} />
             <Tooltip content={<MultiTooltip />} />
             <Legend content={<SimpleLegend />} />

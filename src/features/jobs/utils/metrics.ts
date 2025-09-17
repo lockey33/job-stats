@@ -85,7 +85,7 @@ export function computeEmergingSkillsTrends(
   const trends: EmergingSkillTrend[] = []
   for (const s of allSkills) {
     if ((totalInWindow[s] ?? 0) < minTotalCount) continue
-    const y = months.map((m) => (rankByMonth[m]?.[s] ?? defaultRankPerMonth[m]))
+    const y = months.map((m) => rankByMonth[m]?.[s] ?? defaultRankPerMonth[m])
     const monthly = months.map((m, idx) => ({ month: m, rank: y[idx] as number }))
     trends.push({ skill: s, monthly, slope: linearRegressionSlope(y as number[]) })
   }

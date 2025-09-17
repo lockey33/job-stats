@@ -63,4 +63,3 @@ export function parseCitySkillParams(searchParams: URLSearchParams) {
   }
   return schema.parse(input)
 }
-

@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 
 import type { JobFilters, JobsResult } from '@/features/jobs/types/types'
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
-import { downloadBlob,downloadExcel } from '@/shared/utils/export'
+import { downloadBlob, downloadExcel } from '@/shared/utils/export'
 import { toQueryString } from '@/shared/utils/searchParams'
 
 export function useExport() {
