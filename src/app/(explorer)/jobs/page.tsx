@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 
-import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import {
   emergingQuery,
   jobsQuery,
@@ -8,6 +7,7 @@ import {
   metricsQuery,
   topSkillsQuery,
 } from '@/server/jobs/queries'
+import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 import { JobsPageClient } from './JobsPage.client'
 
@@ -41,7 +41,8 @@ export default async function JobsPage(props: { searchParams?: Promise<SearchPar
   await Promise.all([
     qc.prefetchQuery(metaQuery()),
     qc.prefetchQuery(jobsQuery({ page, pageSize, filters })),
-    qc.prefetchQuery(metricsQuery(filters, undefined, 10)),
+    // charts data
+    qc.prefetchQuery(metricsQuery(filters)),
     qc.prefetchQuery(topSkillsQuery(filters, 50)),
     qc.prefetchQuery(emergingQuery(filters, 12, 10, 5)),
   ])

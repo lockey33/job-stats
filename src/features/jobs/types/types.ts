@@ -111,3 +111,9 @@ export interface EmergingSkillTrendPayload {
   months: string[]
   trends: EmergingSkillTrend[]
 }
+
+export interface CitySkillTrendPayload {
+  months: string[]
+  citySeries: Record<string, { month: string; value: number }[]>
+  topCities: string[]
+}

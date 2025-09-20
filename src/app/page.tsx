@@ -1,5 +1,7 @@
-import JobsPage from './(explorer)/jobs/page'
+import { redirect } from 'next/navigation'
+
+export const runtime = 'nodejs'
 
 export default function Home() {
-  return <JobsPage />
+  redirect('/jobs')
 }

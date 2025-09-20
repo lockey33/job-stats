@@ -36,10 +36,16 @@ const eslintConfig = [
   // Forbid importing server-only modules in known client-only layers
   {
     files: [
-      'src/components/**/*.{ts,tsx}',
+      'src/shared/ui/components/**/*.{ts,tsx}',
       // Protect feature UI and hooks from server imports
       'src/features/**/ui/**/*.{ts,tsx}',
       'src/features/**/hooks/**/*.{ts,tsx}',
+      // App Router client-only surfaces (common patterns)
+      'src/app/**/*client.tsx',
+      'src/app/**/error.tsx',
+      'src/app/**/global-error.tsx',
+      'src/app/**/not-found.tsx',
+      'src/app/**/providers.tsx',
     ],
     rules: {
       'no-restricted-imports': [
@@ -50,6 +56,13 @@ const eslintConfig = [
           paths: ['next/server', 'server-only'],
         },
       ],
+    },
+  },
+  // Allow server imports under API routes (server-only runtime)
+  {
+    files: ['src/app/api/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 ]

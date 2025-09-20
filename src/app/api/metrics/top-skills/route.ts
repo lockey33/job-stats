@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 
-import { getTopSkillsCached } from '@/server/jobs/analytics'
-import { getDatasetVersion } from '@/server/jobs/repository'
+import { getTopSkillsDb } from '@/server/jobs/analytics.prisma'
+import { getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseTopSkillsParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
@@ -18,10 +18,7 @@ export async function GET(req: NextRequest) {
     void pageSize
 
     const { count } = parseTopSkillsParams(searchParams)
-    const [topSkills, version] = await Promise.all([
-      getTopSkillsCached(filters, count),
-      getDatasetVersion(),
-    ])
+    const [topSkills, version] = await Promise.all([getTopSkillsDb(filters, count), getDbVersion()])
 
     const etag = buildEtag(version, 'top-skills', { ...filters, count })
     const inm = req.headers.get('if-none-match') || ''

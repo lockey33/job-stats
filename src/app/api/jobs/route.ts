@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server'
 
-import { applyFilters, dedupeById, paginate } from '@/features/jobs/utils/filtering'
-import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
+import { getDbVersion, queryJobsDb } from '@/server/jobs/repository.prisma'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
@@ -14,14 +13,8 @@ export async function GET(req: NextRequest) {
     const parsed = parseFiltersFromSearchParams(searchParams)
     const { page, pageSize, ...filters } = parsed
 
-    const [jobs, version] = await Promise.all([getAllJobs(), getDatasetVersion()])
-    const filtered = applyFilters(jobs, filters)
-    const unique = dedupeById(filtered)
-    // Sort by date desc (ISO strings compare lexicographically)
-    const sorted = unique
-      .slice()
-      .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
-    const result = paginate(sorted, { page, pageSize })
+    const result = await queryJobsDb(filters, { page, pageSize })
+    const version = await getDbVersion()
 
     const etag = buildEtag(version, 'jobs', { page, pageSize, ...filters })
     const inm = req.headers.get('if-none-match') || ''

@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 
-import { getMetricsCached } from '@/server/jobs/analytics'
-import { getDatasetVersion } from '@/server/jobs/repository'
+import { getMetricsDb } from '@/server/jobs/analytics.prisma'
+import { getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseMetricsParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
@@ -19,11 +19,12 @@ export async function GET(req: NextRequest) {
 
     const { seriesSkills, topSkillsCount } = parseMetricsParams(searchParams)
     const [result, version] = await Promise.all([
-      getMetricsCached(filters, topSkillsCount, seriesSkills),
-      getDatasetVersion(),
+      getMetricsDb(filters, topSkillsCount, seriesSkills),
+      getDbVersion(),
     ])
 
-    const etag = buildEtag(version, 'metrics', { ...filters, topSkillsCount, seriesSkills })
+    // Include a format version in the ETag key to invalidate old cached payloads
+    const etag = buildEtag(version, 'metrics-v2', { ...filters, topSkillsCount, seriesSkills })
     const inm = req.headers.get('if-none-match') || ''
     if (inm === etag) return new Response(null, { status: 304, headers: { ETag: etag } })
 

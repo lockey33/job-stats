@@ -1,0 +1,68 @@
+// Prisma schema — unified Postgres (dev + prod)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SkillKind {
+  HARD
+  SOFT
+}
+
+model Job {
+  id                 Int       @id
+  createdAt          DateTime
+  job                String?
+  jobSlug            String?
+  slug               String?
+  title              String?
+  companyName        String?
+  city               String?
+  region             String?
+  long               Float?
+  lat                Float?
+  durationMonths     Int?
+  durationYears      Int?
+  remote             String?
+  maxTjm             Int?
+  minTjm             Int?
+  experience         String?
+  description        String?
+  candidateProfile   String?
+  companyDescription String?
+
+  skills  JobSkill[]
+
+  @@index([createdAt])
+  @@index([city])
+  @@index([region])
+  @@index([jobSlug])
+  @@index([experience])
+  @@index([remote])
+  @@index([minTjm])
+  @@index([maxTjm])
+}
+
+model Skill {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  links JobSkill[]
+}
+
+model JobSkill {
+  jobId   Int
+  skillId Int
+  kind    SkillKind
+
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, skillId, kind])
+  @@index([skillId])
+}

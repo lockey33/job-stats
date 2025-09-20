@@ -1,7 +1,6 @@
 'use client'
 
 import { Box, Button, Heading, Text } from '@chakra-ui/react'
-import { useEffect } from 'react'
 
 export default function Error({
   error,
@@ -10,10 +9,6 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  useEffect(() => {
-    // Optionally log to an error reporting service
-    // console.error(error);
-  }, [error])
   return (
     <Box p="lg" display="flex" flexDirection="column" gap="sm" alignItems="flex-start">
       <Heading size="md">Un problème est survenu</Heading>

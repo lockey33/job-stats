@@ -2,6 +2,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import type { JobFilters } from '@/features/jobs/types/types'
+
 import { emergingQuery, jobsQuery, metaQuery, metricsQuery, topSkillsQuery } from './queries'
 
 export function useMeta() {

@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 
-import { computeCitySkillTrend } from '@/features/jobs/utils/metrics'
-import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
+import { getCitySkillTrendDb } from '@/server/jobs/analytics.prisma'
+import { getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseCitySkillParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
@@ -18,9 +18,8 @@ export async function GET(req: NextRequest) {
     void pageSize
 
     const { skill, seriesCities, topCityCount } = parseCitySkillParams(searchParams)
-
-    const [jobs, version] = await Promise.all([getAllJobs(), getDatasetVersion()])
-    const result = computeCitySkillTrend(jobs, filters, skill, seriesCities, topCityCount)
+    const result = await getCitySkillTrendDb(filters, skill, seriesCities, topCityCount)
+    const version = await getDbVersion()
 
     const etag = buildEtag(version, 'city-skill', { ...filters, skill, seriesCities, topCityCount })
     const inm = req.headers.get('if-none-match') || ''

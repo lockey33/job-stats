@@ -1,7 +1,25 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-/src/data
+/.github/workflows/daily-update.yml
+
+# Prisma: version schemas, ignore local DB/cache only
+/prisma/var/**
+/prisma/*.db
+/prisma/*.sqlite
+
+
+/tools/
+
+
+
+# Local/private scripts (scraping/ingestion helpers)
 /scripts
+# Admin sync API should be deployed
+!src/app/api/admin/sync/**
+src/server/jobs/sync.ts
+src/server/jobs/repository.ts
+src/server/jobs/analytics.ts
+src/server/jobs/facets.ts
 
 .env
 
@@ -46,3 +64,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Allow tooling access to fix build errors
+!src/server/jobs/sync.ts

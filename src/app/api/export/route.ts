@@ -1,77 +1,77 @@
 import type { NextRequest } from 'next/server'
 
-import { applyFilters, dedupeById } from '@/features/jobs/utils/filtering'
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
-import { getAllJobs, getDatasetVersion } from '@/server/jobs/repository'
+import { fetchJobsDbBatch, getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// jobItemToRow centralized in shared/jobs/transformers
-
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const parsed = parseFiltersFromSearchParams(searchParams)
-    const { page, pageSize, ...filters } = parsed // export ignores pagination
+    const { page, pageSize, ...filters } = parsed
     void page
     void pageSize
 
     const format = (searchParams.get('format') || 'xlsx').toLowerCase()
-
-    const [all, version] = await Promise.all([getAllJobs(), getDatasetVersion()])
-    const filtered = dedupeById(applyFilters(all, filters))
-    // Sort by date desc for consistency
-    const sorted = filtered
-      .slice()
-      .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
-
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)
-    // Helper to stream CSV without materializing the whole string
-    const streamCsv = () => {
-      if (sorted.length === 0) {
-        return new Response('', {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/csv; charset=utf-8',
-            'Content-Disposition': `attachment; filename="jobs_all_${ts}.csv"`,
-            'X-Data-Version': version,
-          },
-        })
-      }
-      const encoder = new TextEncoder()
-      const firstRow = jobItemToRow(sorted[0]!)
-      const headers = Object.keys(firstRow)
-      function toCSVValue(val: unknown): string {
-        if (val == null) return ''
-        const s = String(val)
-        if (s.includes('"') || s.includes(',') || s.includes('\n'))
-          return '"' + s.replace(/"/g, '""') + '"'
-        return s
-      }
+    const version = await getDbVersion()
+    const encoder = new TextEncoder()
+
+    async function streamCsvDb() {
+      const headers = Object.keys(
+        jobItemToRow({
+          id: 0,
+          created_at: new Date().toISOString(),
+          title: '',
+          job_slug: '',
+          slug: '',
+          company_name: '',
+          city: '',
+          remote: '',
+          experience: '',
+          min_tjm: null,
+          max_tjm: null,
+          skills: [],
+          soft_skills: [],
+          description: null,
+          candidate_profile: null,
+          company_description: null,
+        } as import('@/features/jobs/types/types').JobItem),
+      )
       const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
+        async start(controller) {
           controller.enqueue(encoder.encode(headers.join(',') + '\n'))
-          // stream rows in batches to avoid blocking
           const batchSize = 1000
-          let index = 0
-          function pushBatch() {
-            const end = Math.min(sorted.length, index + batchSize)
-            for (let i = index; i < end; i++) {
-              const row = jobItemToRow(sorted[i]!)
-              const line = headers.map((h) => toCSVValue(row[h])).join(',') + '\n'
-              controller.enqueue(encoder.encode(line))
+          let skip = 0
+          for (;;) {
+            const batch = await fetchJobsDbBatch(
+              filters as import('@/features/jobs/types/types').JobFilters,
+              skip,
+              batchSize,
+            )
+            if (batch.length === 0) break
+            for (const it of batch) {
+              const row = jobItemToRow(it)
+              const line = headers
+                .map((h) => {
+                  const val = row[h as keyof typeof row]
+                  if (val == null) return ''
+                  const s = String(val)
+                  return s.includes('"') || s.includes(',') || s.includes('\n')
+                    ? '"' + s.replace(/"/g, '""') + '"'
+                    : s
+                })
+                .join(',')
+              controller.enqueue(encoder.encode(line + '\n'))
             }
-            index = end
-            if (index < sorted.length) {
-              // Yield back to event loop
-              setTimeout(pushBatch, 0)
-            } else {
-              controller.close()
-            }
+            skip += batch.length
+            if (batch.length < batchSize) break
+            await new Promise((r) => setTimeout(r, 0))
           }
-          pushBatch()
+          controller.close()
         },
       })
       return new Response(stream, {
@@ -84,25 +84,32 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    if (format === 'csv') {
-      return streamCsv()
-    }
+    if (format === 'csv') return streamCsvDb()
 
-    // XLSX generation
-    // Guardrail: large XLSX exports can be memory heavy — fallback to CSV
     const envLimit = Number.parseInt(process.env.EXPORT_XLSX_LIMIT || '', 10)
     const XLSX_LIMIT =
       Number.isFinite(envLimit) && envLimit > 0 ? Math.max(1000, Math.min(envLimit, 250000)) : 50000
-    if (sorted.length > XLSX_LIMIT) {
-      return streamCsv()
+    const rows: import('@/shared/utils/export').Row[] = []
+    const batchSize = 1000
+    let skip = 0
+    for (;;) {
+      if (rows.length >= XLSX_LIMIT) break
+      const batch = await fetchJobsDbBatch(
+        filters as import('@/features/jobs/types/types').JobFilters,
+        skip,
+        Math.min(batchSize, XLSX_LIMIT - rows.length),
+      )
+      if (batch.length === 0) break
+      rows.push(...batch.map((it) => jobItemToRow(it)))
+      skip += batch.length
+      if (batch.length < batchSize) break
     }
+    if (rows.length >= XLSX_LIMIT) return streamCsvDb()
     const XLSX = await import('xlsx')
-    const rows = sorted.map(jobItemToRow)
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Jobs')
     const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
-
     return new Response(buf, {
       status: 200,
       headers: {

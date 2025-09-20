@@ -1,0 +1,10 @@
+# Prevent uploading secrets and local artifacts when using Vercel CLI
+.env
+.env*
+*.sqlite
+*.db
+prisma/var/**
+var/**
+.next/
+.vercel/
+node_modules/

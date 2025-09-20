@@ -1,27 +1,32 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-
-import JobDetailsDrawer from '@/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
-const CitySkillTrendView = dynamic(
-  () => import('@/components/organisms/CitySkillTrendView/CitySkillTrendView'),
-  { ssr: false },
-)
 import { Button, Container, Heading, Link, Stack, Text } from '@chakra-ui/react'
 import { useQueryClient } from '@tanstack/react-query'
+import dynamic from 'next/dynamic'
+import { parseAsInteger, useQueryState } from 'nuqs'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import Section from '@/components/molecules/Section/Section'
-import type { TrendsOptions } from '@/components/molecules/TrendsControls/TrendsControls'
-import FilterDrawer from '@/components/organisms/FilterDrawer/FilterDrawer'
+import LazyOnVisible from '@/shared/ui/components/atoms/LazyOnVisible/LazyOnVisible'
+import Section from '@/shared/ui/components/molecules/Section/Section'
+import type { TrendsOptions } from '@/shared/ui/components/molecules/TrendsControls/TrendsControls'
+const FilterDrawer = dynamic(
+  () => import('@/shared/ui/components/organisms/FilterDrawer/FilterDrawer'),
+  {
+    ssr: false,
+  },
+)
+import JobDetailsDrawer from '@/shared/ui/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
+const CitySkillTrendView = dynamic(
+  () => import('@/shared/ui/components/organisms/CitySkillTrendView/CitySkillTrendView'),
+  { ssr: false },
+)
 import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api'
-import { fetchJobs } from '@/features/jobs/api/endpoints'
+import { fetchJobById, fetchJobs } from '@/features/jobs/api/endpoints'
 import { queryKeys } from '@/features/jobs/api/queryKeys'
 import { useExport } from '@/features/jobs/hooks/useExport'
-import type { JobFilters } from '@/features/jobs/types/types'
-import type { JobItem } from '@/features/jobs/types/types'
-import JobsChartsSection from '@/features/jobs/ui/JobsChartsSection'
-import JobsResultsSection from '@/features/jobs/ui/JobsResultsSection'
+import type { JobFilters, JobItem } from '@/features/jobs/types/types'
+import JobsChartsSection from '@/features/jobs/ui/components/organisms/JobsChartSection/JobsChartsSection'
+import JobsResultsSection from '@/features/jobs/ui/components/organisms/JobsResultsSection/JobsResultsSection'
 
 import { type FiltersFormValues, useExplorerState } from './hooks/useExplorerState'
 
@@ -73,6 +78,36 @@ export function JobsPageClient() {
   const emerging = emergingQuery.data ?? null
   const meta = metaQuery.data ?? null
 
+  // Sync selected job with URL param ?jobId=123 (shareable links)
+  const [jobId, setJobId] = useQueryState('jobId', parseAsInteger)
+  useEffect(() => {
+    let canceled = false
+    const openFromId = async (id: number) => {
+      // try find in current page first
+      const found = jobs?.items.find((it) => it.id === id) ?? null
+      if (found) {
+        if (!canceled) setSelectedJob(found)
+        return
+      }
+      try {
+        const item = await fetchJobById(id)
+        if (!canceled) setSelectedJob(item)
+      } catch {
+        // ignore (not found)
+        if (!canceled) setSelectedJob(null)
+      }
+    }
+    if (typeof jobId === 'number' && Number.isFinite(jobId) && jobId > 0) {
+      void openFromId(jobId)
+    } else {
+      // ensure closed if param removed
+      setSelectedJob((cur) => (cur ? null : cur))
+    }
+    return () => {
+      canceled = true
+    }
+  }, [jobId, jobs])
+
   useEffect(() => {
     if (metrics && !seriesCustom) {
       const next = metrics.seriesSkills ?? []
@@ -84,34 +119,51 @@ export function JobsPageClient() {
 
   useEffect(() => {
     if (!jobs) return
-    const promises: Promise<unknown>[] = []
-    if (jobs.page < jobs.pageCount) {
-      const nextFilters = {
-        ...(deferredFilters as Partial<JobFilters>),
-        page: jobs.page + 1,
-        pageSize,
+    const run = () => {
+      const promises: Promise<unknown>[] = []
+      if (jobs.page < jobs.pageCount) {
+        const nextFilters = {
+          ...(deferredFilters as Partial<JobFilters>),
+          page: jobs.page + 1,
+          pageSize,
+        }
+        promises.push(
+          queryClient.prefetchQuery({
+            queryKey: queryKeys.jobs(nextFilters),
+            queryFn: () => fetchJobs(nextFilters),
+          }),
+        )
       }
-      promises.push(
-        queryClient.prefetchQuery({
-          queryKey: queryKeys.jobs(nextFilters),
-          queryFn: () => fetchJobs(nextFilters),
-        }),
-      )
-    }
-    if (jobs.page > 1) {
-      const prevFilters = {
-        ...(deferredFilters as Partial<JobFilters>),
-        page: jobs.page - 1,
-        pageSize,
+      if (jobs.page > 1) {
+        const prevFilters = {
+          ...(deferredFilters as Partial<JobFilters>),
+          page: jobs.page - 1,
+          pageSize,
+        }
+        promises.push(
+          queryClient.prefetchQuery({
+            queryKey: queryKeys.jobs(prevFilters),
+            queryFn: () => fetchJobs(prevFilters),
+          }),
+        )
       }
-      promises.push(
-        queryClient.prefetchQuery({
-          queryKey: queryKeys.jobs(prevFilters),
-          queryFn: () => fetchJobs(prevFilters),
-        }),
-      )
+      void Promise.allSettled(promises)
     }
-    void Promise.allSettled(promises)
+    // Defer prefetching to idle time to avoid competing with initial load
+    type RequestIdle = (cb: () => void, opts?: { timeout?: number }) => number
+    type CancelIdle = (handle: number) => void
+    const glb = globalThis as unknown as {
+      requestIdleCallback?: RequestIdle
+      cancelIdleCallback?: CancelIdle
+    }
+    const idle = glb.requestIdleCallback
+    let handle: number | undefined
+    if (idle) handle = idle(run, { timeout: 2000 })
+    else handle = window.setTimeout(run, 1000)
+    return () => {
+      if (idle && handle) glb.cancelIdleCallback?.(handle)
+      else if (handle) window.clearTimeout(handle)
+    }
   }, [jobs, deferredFilters, pageSize, queryClient])
 
   // keep future-friendly slot for SearchBar to update query
@@ -200,13 +252,15 @@ export function JobsPageClient() {
         </Text>
       </Stack>
 
-      <FilterDrawer
-        isOpen={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-        meta={meta}
-        filters={filters as unknown as JobFilters}
-        onChange={onFiltersChange}
-      />
+      {filtersOpen ? (
+        <FilterDrawer
+          isOpen={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          meta={meta}
+          filters={filters as unknown as JobFilters}
+          onChange={onFiltersChange}
+        />
+      ) : null}
 
       <Stack gap="md" mb="lg">
         <JobsResultsSection
@@ -216,7 +270,7 @@ export function JobsPageClient() {
           error={jobsQuery.error as unknown}
           isFetching={jobsQuery.isFetching}
           filters={filters as unknown as JobFilters}
-          onFiltersChange={(f) => onFiltersChange(f as unknown as FiltersFormValues)}
+          onFiltersChange={(f: FiltersFormValues) => onFiltersChange(f)}
           onClearAllFilters={onClearAllFilters}
           activeFiltersCount={activeFiltersCount}
           onOpenFilters={() => setFiltersOpen(true)}
@@ -225,7 +279,11 @@ export function JobsPageClient() {
           {...(sortKey ? { sortKey } : {})}
           sortOrder={sortOrder}
           onSortChange={onSortChange}
-          onSelectJob={(it) => setSelectedJob(it)}
+          onSelectJob={(it: JobItem) => {
+            setSelectedJob(it)
+            // push jobId to URL for shareable link
+            void setJobId(it.id)
+          }}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
           exporting={exporting}
@@ -242,18 +300,19 @@ export function JobsPageClient() {
           emerging={emerging}
           seriesSkills={seriesSkills}
           autoSeriesEnabled={!seriesCustom}
-          onSeriesChange={(next) => {
+          onSeriesChange={(next: string[]) => {
             setSeriesSkills(next)
             const tops = metrics?.topSkills ?? []
-            const isTopReset = next.length === tops.length && next.every((v, i) => v === tops[i])
+            const isTopReset =
+              next.length === tops.length && next.every((v: string, i: number) => v === tops[i])
             setSeriesCustom(!isTopReset)
           }}
-          onToggleAuto={(auto) => {
+          onToggleAuto={(auto: boolean) => {
             setSeriesCustom(!auto)
             if (auto && metrics) setSeriesSkills(metrics.seriesSkills)
           }}
           trends={trends}
-          setTrends={(t) => setTrends(t)}
+          setTrends={(t: TrendsOptions) => setTrends(t)}
           loading={metricsQuery.isLoading && topSkillsQuery.isLoading && emergingQuery.isLoading}
           fetching={
             metricsQuery.isFetching || topSkillsQuery.isFetching || emergingQuery.isFetching
@@ -273,15 +332,29 @@ export function JobsPageClient() {
 
       <Stack gap="md">
         <Section title="Comparaison par ville" subtitle="Évolution mensuelle d’un skill par ville">
-          <CitySkillTrendView
-            filters={filters as JobFilters}
-            meta={meta}
-            {...(metrics?.topSkills?.[0] ? { defaultSkill: metrics.topSkills[0] } : {})}
-          />
+          <LazyOnVisible
+            placeholder={
+              <Text fontSize="sm" color="gray.600">
+                Chargement du graphique…
+              </Text>
+            }
+          >
+            <CitySkillTrendView
+              filters={filters as JobFilters}
+              meta={meta}
+              {...(metrics?.topSkills?.[0] ? { defaultSkill: metrics.topSkills[0] } : {})}
+            />
+          </LazyOnVisible>
         </Section>
       </Stack>
 
-      <JobDetailsDrawer job={selectedJob} onClose={() => setSelectedJob(null)} />
+      <JobDetailsDrawer
+        job={selectedJob}
+        onClose={() => {
+          setSelectedJob(null)
+          void setJobId(null)
+        }}
+      />
     </Container>
   )
 }

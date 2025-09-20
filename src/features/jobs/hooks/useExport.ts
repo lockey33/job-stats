@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 import type { JobFilters, JobsResult } from '@/features/jobs/types/types'
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
@@ -10,7 +10,7 @@ import { toQueryString } from '@/shared/utils/searchParams'
 export function useExport() {
   const [exporting, setExporting] = useState(false)
 
-  const exportCurrentPage = useCallback(async (jobs: JobsResult | null | undefined) => {
+  const exportCurrentPage = async (jobs: JobsResult | null | undefined) => {
     if (!jobs) return
     try {
       setExporting(true)
@@ -20,9 +20,9 @@ export function useExport() {
     } finally {
       setExporting(false)
     }
-  }, [])
+  }
 
-  const exportAllFiltered = useCallback(async (filters: Partial<JobFilters>) => {
+  const exportAllFiltered = async (filters: Partial<JobFilters>) => {
     try {
       setExporting(true)
       const qsCore = toQueryString(filters as Partial<JobFilters>)
@@ -37,7 +37,7 @@ export function useExport() {
     } finally {
       setExporting(false)
     }
-  }, [])
+  }
 
-  return { exporting, exportCurrentPage, exportAllFiltered } as const
+  return { exporting, exportCurrentPage, exportAllFiltered }
 }

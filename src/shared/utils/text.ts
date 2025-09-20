@@ -33,11 +33,11 @@ export function htmlToPlainText(html?: string | null): string {
   // Decode entities
   s = decodeHtmlEntities(s)
   // Normalize whitespace
-  s = s.replace(/\u00A0/g, ' ')
+  s = s
+    .replace(/\u00A0/g, ' ')
     .replace(/[ \t\f\v]+/g, ' ')
     .replace(/\s*\n\s*/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return s
 }
-

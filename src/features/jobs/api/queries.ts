@@ -1,12 +1,5 @@
 import type { UseQueryOptions } from '@tanstack/react-query'
 
-import type {
-  AnalyticsResult,
-  EmergingSkillTrendPayload,
-  JobFilters,
-  JobsResult,
-  TopSkill,
-} from '@/features/jobs/types/types'
 import {
   fetchEmergingSkills,
   fetchJobs,
@@ -15,6 +8,13 @@ import {
   fetchTopSkills,
 } from '@/features/jobs/api/endpoints'
 import { queryKeys } from '@/features/jobs/api/queryKeys'
+import type {
+  AnalyticsResult,
+  EmergingSkillTrendPayload,
+  JobFilters,
+  JobsResult,
+  TopSkill,
+} from '@/features/jobs/types/types'
 
 export function metaQuery(): UseQueryOptions<Awaited<ReturnType<typeof fetchMeta>>, Error> {
   return {

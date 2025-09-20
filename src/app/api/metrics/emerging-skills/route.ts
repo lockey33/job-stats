@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 
-import { getEmergingCached } from '@/server/jobs/analytics'
-import { getDatasetVersion } from '@/server/jobs/repository'
+import { getEmergingDb } from '@/server/jobs/analytics.prisma'
+import { getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseEmergingParams } from '@/shared/params/schemas'
 import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
 
     const { monthsWindow, topK, minTotalCount } = parseEmergingParams(searchParams)
     const [payload, version] = await Promise.all([
-      getEmergingCached(filters, monthsWindow, topK, minTotalCount),
-      getDatasetVersion(),
+      getEmergingDb(filters, monthsWindow, topK, minTotalCount),
+      getDbVersion(),
     ])
 
     const etag = buildEtag(version, 'emerging', { ...filters, monthsWindow, topK, minTotalCount })

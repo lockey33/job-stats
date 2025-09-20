@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { FetchQueryOptions } from '@tanstack/react-query'
 
+import { queryKeys } from '@/features/jobs/api/queryKeys'
 import type {
   AnalyticsResult,
   EmergingSkillTrendPayload,
@@ -9,20 +10,17 @@ import type {
   JobsResult,
   TopSkill,
 } from '@/features/jobs/types/types'
-import { applyFilters, dedupeById, paginate } from '@/features/jobs/utils/filtering'
-import { getEmergingCached, getMetricsCached, getTopSkillsCached } from '@/server/jobs/analytics'
-import { getMetaFacets } from '@/server/jobs/facets'
-import { getAllJobs } from '@/server/jobs/repository'
-import { queryKeys } from '@/features/jobs/api/queryKeys'
+import { getEmergingDb, getMetricsDb, getTopSkillsDb } from '@/server/jobs/analytics.prisma'
+import { getMetaFacetsDb, queryJobsDb } from '@/server/jobs/repository.prisma'
 
 export function metaQuery(): FetchQueryOptions<
-  Awaited<ReturnType<typeof getMetaFacets>>,
+  Awaited<ReturnType<typeof getMetaFacetsDb>>,
   Error,
-  Awaited<ReturnType<typeof getMetaFacets>>
+  Awaited<ReturnType<typeof getMetaFacetsDb>>
 > {
   return {
     queryKey: queryKeys.meta(),
-    queryFn: () => getMetaFacets(),
+    queryFn: () => getMetaFacetsDb(),
     staleTime: Infinity,
     gcTime: Infinity,
   }
@@ -37,12 +35,7 @@ export function jobsQuery(params: {
   return {
     queryKey: queryKeys.jobs({ page, pageSize, ...filters }),
     queryFn: async () => {
-      const jobsAll = await getAllJobs()
-      const filtered = dedupeById(applyFilters(jobsAll, filters as JobFilters))
-      const sorted = filtered
-        .slice()
-        .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
-      return paginate(sorted, { page, pageSize })
+      return queryJobsDb(filters as JobFilters, { page, pageSize })
     },
   }
 }
@@ -54,7 +47,7 @@ export function metricsQuery(
 ): FetchQueryOptions<AnalyticsResult, Error, AnalyticsResult> {
   return {
     queryKey: queryKeys.metrics({ series: seriesSkills ?? 'auto', ...filters }),
-    queryFn: () => getMetricsCached(filters as JobFilters, topSkillsCount, seriesSkills),
+    queryFn: () => getMetricsDb(filters as JobFilters, topSkillsCount, seriesSkills),
   }
 }
 
@@ -64,7 +57,7 @@ export function topSkillsQuery(
 ): FetchQueryOptions<TopSkill[], Error, TopSkill[]> {
   return {
     queryKey: queryKeys.topSkills({ count, ...filters }),
-    queryFn: () => getTopSkillsCached(filters as JobFilters, count),
+    queryFn: () => getTopSkillsDb(filters as JobFilters, count),
   }
 }
 
@@ -76,6 +69,6 @@ export function emergingQuery(
 ): FetchQueryOptions<EmergingSkillTrendPayload, Error, EmergingSkillTrendPayload> {
   return {
     queryKey: queryKeys.emerging({ monthsWindow, topK, minTotalCount, ...filters }),
-    queryFn: () => getEmergingCached(filters as JobFilters, monthsWindow, topK, minTotalCount),
+    queryFn: () => getEmergingDb(filters as JobFilters, monthsWindow, topK, minTotalCount),
   }
 }

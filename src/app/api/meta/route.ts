@@ -1,5 +1,4 @@
-import { getMetaFacets } from '@/server/jobs/facets'
-import { getDatasetVersion } from '@/server/jobs/repository'
+import { getDbVersion, getMetaFacetsDb } from '@/server/jobs/repository.prisma'
 import { buildEtag } from '@/shared/react-query/keys'
 
 export const runtime = 'nodejs'
@@ -7,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
-    const [facets, version] = await Promise.all([getMetaFacets(), getDatasetVersion()])
+    const [facets, version] = await Promise.all([getMetaFacetsDb(), getDbVersion()])
 
     const etag = buildEtag(version, 'meta')
     const inm =

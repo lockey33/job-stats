@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import React, { Suspense, useState } from 'react'
 
-import { system } from '@/theme/system'
+import { system } from '@/shared/ui/theme/system'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -33,4 +33,3 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     </CacheProvider>
   )
 }
-

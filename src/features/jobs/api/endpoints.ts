@@ -1,7 +1,9 @@
 import type {
   AnalyticsResult,
+  CitySkillTrendPayload,
   EmergingSkillTrendPayload,
   JobFilters,
+  JobItem,
   JobsResult,
   MetaFacets,
   TopSkill,
@@ -40,12 +42,6 @@ export async function fetchTopSkills(
   return data.topSkills
 }
 
-export interface CitySkillTrendPayload {
-  months: string[]
-  citySeries: Record<string, { month: string; value: number }[]>
-  topCities: string[]
-}
-
 export async function fetchEmergingSkills(
   filters: Partial<JobFilters> = {},
   monthsWindow = 12,
@@ -65,11 +61,16 @@ export async function fetchCitySkillTrend(
   skill: string,
   seriesCities?: string[],
   topCityCount?: number,
+  init?: RequestInit,
 ): Promise<CitySkillTrendPayload> {
   const query = buildQueryFromFilters(filters, {
     skill,
     seriesCities: seriesCities && seriesCities.length > 0 ? seriesCities.join(',') : undefined,
     topCityCount,
   })
-  return apiGet('/api/metrics/city-skill', query)
+  return apiGet('/api/metrics/city-skill', query, init)
+}
+
+export async function fetchJobById(id: number): Promise<JobItem> {
+  return apiGet(`/api/jobs/${id}`)
 }

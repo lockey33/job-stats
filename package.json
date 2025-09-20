@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "prisma generate",
     "dev": "next dev",
+    "dev:docker": "pnpm db:up && pnpm prisma:generate && pnpm db:wait && pnpm db:push && next dev",
+    "prebuild": "prisma generate",
     "build": "next build",
+    "build:vercel": "pnpm prisma:generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -12,11 +16,21 @@
     "check:format": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:ci": "pnpm typecheck && pnpm lint && pnpm build",
-    "update:data": "node scripts/update-data.mjs",
-    "update:data:dry": "node scripts/update-data.mjs --dry-run",
-    "update:data:oldest": "node scripts/update-data.mjs --pivot=oldest"
+    "dev:ensure-db": "node tools/dev/ensure-db.mjs",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d db",
+    "db:wait": "node tools/dev/wait-for-db.mjs",
+    "db:seed": "node scripts/dev-seed.mjs",
+    "sync": "node scripts/sync.mjs",
+    "sync:daily": "node scripts/sync.mjs --days=4",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/client": "^5.18.0",
     "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/next-js": "^2.4.2",
     "@chakra-ui/react": "^3.26.0",
@@ -35,9 +49,10 @@
     "react-hook-form": "^7.62.0",
     "recharts": "^3.2.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.1.5"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "prisma": "^5.18.0",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -50,7 +65,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": "20.x"
   },
-  "packageManager": "pnpm@9"
+  "packageManager": "pnpm@10.0.0"
 }
