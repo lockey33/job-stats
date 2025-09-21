@@ -20,11 +20,21 @@ export function useJobs(params: { page: number; pageSize: number; filters: Parti
 }
 
 export function useMetrics(filters: Partial<JobFilters>, series?: string[]) {
-  return useQuery(metricsQuery(filters, series))
+  return useQuery({
+    ...metricsQuery(filters, series),
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+  })
 }
 
 export function useTopSkills(filters: Partial<JobFilters>) {
-  return useQuery(topSkillsQuery(filters, 50))
+  return useQuery({
+    ...topSkillsQuery(filters, 50),
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+  })
 }
 
 export function useEmerging(
@@ -33,5 +43,10 @@ export function useEmerging(
   monthsWindow = 12,
   minTotalCount = 5,
 ) {
-  return useQuery(emergingQuery(filters, monthsWindow, topK, minTotalCount))
+  return useQuery({
+    ...emergingQuery(filters, monthsWindow, topK, minTotalCount),
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+  })
 }

@@ -117,6 +117,13 @@ export function JobsPageClient() {
     }
   }, [metrics, seriesCustom, seriesSkills])
 
+  // Safety: ensure charts refetch on filter/series change even if cache key stays stable
+  useEffect(() => {
+    // Fire-and-forget; React Query dedupes in-flight
+    void metricsQuery.refetch()
+    void topSkillsQuery.refetch()
+  }, [deferredFilters, seriesCustom, seriesSkills])
+
   useEffect(() => {
     if (!jobs) return
     const run = () => {
@@ -313,7 +320,7 @@ export function JobsPageClient() {
           }}
           trends={trends}
           setTrends={(t: TrendsOptions) => setTrends(t)}
-          loading={metricsQuery.isLoading && topSkillsQuery.isLoading && emergingQuery.isLoading}
+          loading={metricsQuery.isLoading || topSkillsQuery.isLoading || emergingQuery.isLoading}
           fetching={
             metricsQuery.isFetching || topSkillsQuery.isFetching || emergingQuery.isFetching
           }

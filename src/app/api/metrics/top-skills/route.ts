@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server'
 import { getTopSkillsDb } from '@/server/jobs/analytics.prisma'
 import { getDbVersion } from '@/server/jobs/repository.prisma'
 import { parseTopSkillsParams } from '@/shared/params/schemas'
-import { buildEtag } from '@/shared/react-query/keys'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
@@ -20,10 +19,6 @@ export async function GET(req: NextRequest) {
     const { count } = parseTopSkillsParams(searchParams)
     const [topSkills, version] = await Promise.all([getTopSkillsDb(filters, count), getDbVersion()])
 
-    const etag = buildEtag(version, 'top-skills', { ...filters, count })
-    const inm = req.headers.get('if-none-match') || ''
-    if (inm === etag) return new Response(null, { status: 304, headers: { ETag: etag } })
-
     return Response.json(
       { topSkills },
       {
@@ -31,7 +26,6 @@ export async function GET(req: NextRequest) {
         headers: {
           'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
           'X-Data-Version': version,
-          ETag: etag,
         },
       },
     )

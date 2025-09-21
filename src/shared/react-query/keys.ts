@@ -27,13 +27,3 @@ export function normalizeKeyParams(params: Record<string, unknown>): Record<stri
 export function paramsKey(params: Record<string, unknown>): string {
   return stableStringify(normalizeKeyParams(params))
 }
-
-// Build a normalized ETag based on dataset version + scope + params
-export function buildEtag(
-  version: string,
-  scope: string,
-  params: Record<string, unknown> = {},
-): string {
-  const key = stableStringify({ scope, ...normalizeKeyParams(params) })
-  return `W/"${version}|${key}"`
-}

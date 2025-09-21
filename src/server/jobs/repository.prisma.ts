@@ -10,77 +10,12 @@ import type {
   Pagination,
 } from '@/features/jobs/types/types'
 import { getPrisma, isSchemaMissingError } from '@/server/db/prisma'
+import { normalizeJobFilters } from '@/server/db/filters/jobFilters'
+import { compileJobWhere, resolveTextSearchIds } from '@/server/db/filters/queryCompiler'
 
 function filtersToWhere(filters: JobFilters): Prisma.JobWhereInput {
-  const where: Prisma.JobWhereInput = { AND: [] }
-  const AND = where.AND as Prisma.JobWhereInput[]
-
-  // Free text handled via raw LOWER(...) LIKE in queryJobsDb/fetchJobsDbBatch for case-insensitivity
-
-  const skills = (filters.skills ?? []).filter(Boolean)
-  for (const s of skills) {
-    AND.push({
-      skills: {
-        some: { kind: 'HARD', skill: { name: { equals: s } } },
-      },
-    })
-  }
-
-  const excludeSkills = (filters.excludeSkills ?? []).filter(Boolean)
-  if (excludeSkills.length > 0) {
-    AND.push({
-      NOT: excludeSkills.map((s) => ({ skills: { some: { skill: { name: s } } } })),
-    })
-  }
-
-  const excludeTitle = (filters.excludeTitle ?? []).filter(Boolean)
-  if (excludeTitle.length > 0) {
-    AND.push({ NOT: excludeTitle.map((w) => ({ title: { contains: w } })) })
-  }
-
-  const cities = (filters.cities ?? []).filter(Boolean)
-  if (cities.length > 0) {
-    const mode = filters.cityMatch ?? 'contains'
-    const match: Prisma.JobWhereInput =
-      mode === 'exact'
-        ? { city: { in: cities } }
-        : { OR: cities.map((c) => ({ city: { contains: c } })) }
-    if (filters.excludeCities) AND.push({ NOT: match })
-    else AND.push(match)
-  }
-
-  const regions = (filters.regions ?? []).filter(Boolean)
-  if (regions.length > 0) {
-    const match: Prisma.JobWhereInput = { region: { in: regions } }
-    if (filters.excludeRegions) AND.push({ NOT: match })
-    else AND.push(match)
-  }
-
-  const remote = (filters.remote ?? []).filter(Boolean)
-  if (remote.length > 0) AND.push({ remote: { in: remote } })
-
-  const experience = (filters.experience ?? []).filter(Boolean)
-  if (experience.length > 0) AND.push({ experience: { in: experience } })
-
-  const slugs = (filters.job_slugs ?? []).filter(Boolean)
-  if (slugs.length > 0) AND.push({ jobSlug: { in: slugs } })
-
-  if (typeof filters.minTjm === 'number') {
-    AND.push({ OR: [{ minTjm: { gte: filters.minTjm } }, { maxTjm: { gte: filters.minTjm } }] })
-  }
-  if (typeof filters.maxTjm === 'number') {
-    AND.push({ OR: [{ minTjm: { lte: filters.maxTjm } }, { maxTjm: { lte: filters.maxTjm } }] })
-  }
-
-  if (filters.startDate) AND.push({ createdAt: { gte: new Date(filters.startDate) } })
-  if (filters.endDate) AND.push({ createdAt: { lte: new Date(filters.endDate) } })
-
-  return where
-}
-
-function isPg(): boolean {
-  const url = process.env.DATABASE_URL || ''
-  return url.startsWith('postgres') || url.includes('neon.tech') || url.includes('vercel-postgres')
+  const nf = normalizeJobFilters(filters)
+  return compileJobWhere(nf)
 }
 
 function mapJobRecord(
@@ -120,6 +55,7 @@ export async function queryJobsDb(
   filters: JobFilters,
   { page, pageSize }: Pagination,
 ): Promise<JobsResult> {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -129,39 +65,12 @@ export async function queryJobsDb(
     }
     throw e
   }
-  const where = filtersToWhere(filters)
+  const where = compileJobWhere(nf)
 
-  // Case-insensitive free-text search using LOWER(...)
-  let ids: number[] | null = null
-  const q = (filters.q || '').trim().toLowerCase()
-  if (q) {
-    let rows: Array<{ id: number }> = []
-    if (isPg()) {
-      rows = await prisma.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM "Job"
-        WHERE to_tsvector('simple',
-          COALESCE("title", '') || ' ' || COALESCE("companyName", '') || ' ' || COALESCE("city", '') || ' ' ||
-          COALESCE("description", '') || ' ' || COALESCE("candidateProfile", '') || ' ' || COALESCE("companyDescription", '')
-        ) @@ plainto_tsquery('simple', ${q})
-        ORDER BY "createdAt" DESC
-      `
-    } else {
-      const like = `%${q}%`
-      rows = await prisma.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM Job WHERE
-          LOWER(COALESCE(title, '')) LIKE ${like} OR
-          LOWER(COALESCE(companyName, '')) LIKE ${like} OR
-          LOWER(COALESCE(city, '')) LIKE ${like} OR
-          LOWER(COALESCE(description, '')) LIKE ${like} OR
-          LOWER(COALESCE(candidateProfile, '')) LIKE ${like} OR
-          LOWER(COALESCE(companyDescription, '')) LIKE ${like}
-        ORDER BY createdAt DESC
-      `
-    }
-    ids = rows.map((r) => r.id)
-    if (ids.length === 0) {
-      return { items: [], total: 0, page, pageSize, pageCount: 1 }
-    }
+  // Case-insensitive free-text via centralized resolver
+  if (nf.q) {
+    const ids = await resolveTextSearchIds(prisma, nf)
+    if (ids.length === 0) return { items: [], total: 0, page, pageSize, pageCount: 1 }
     where.id = { in: ids }
   }
 
@@ -301,6 +210,7 @@ export async function fetchJobsDbBatch(
   skip: number,
   take: number,
 ): Promise<JobItem[]> {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -308,36 +218,10 @@ export async function fetchJobsDbBatch(
     if (process.env.NODE_ENV !== 'production' && isSchemaMissingError(e)) return []
     throw e
   }
-  const where = filtersToWhere(filters)
+  const where = compileJobWhere(nf)
   // Case-insensitive free text via raw ids
-  const q = (filters.q || '').trim().toLowerCase()
-  if (q) {
-    let rows: Array<{ id: number }>
-    if (isPg()) {
-      rows = await prisma.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM "Job"
-        WHERE to_tsvector('simple',
-          COALESCE("title", '') || ' ' || COALESCE("companyName", '') || ' ' || COALESCE("city", '') || ' ' ||
-          COALESCE("description", '') || ' ' || COALESCE("candidateProfile", '') || ' ' || COALESCE("companyDescription", '')
-        ) @@ plainto_tsquery('simple', ${q})
-        ORDER BY "createdAt" DESC
-        LIMIT ${take} OFFSET ${skip}
-      `
-    } else {
-      const like = `%${q}%`
-      rows = await prisma.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM Job WHERE
-          LOWER(COALESCE(title, '')) LIKE ${like} OR
-          LOWER(COALESCE(companyName, '')) LIKE ${like} OR
-          LOWER(COALESCE(city, '')) LIKE ${like} OR
-          LOWER(COALESCE(description, '')) LIKE ${like} OR
-          LOWER(COALESCE(candidateProfile, '')) LIKE ${like} OR
-          LOWER(COALESCE(companyDescription, '')) LIKE ${like}
-        ORDER BY createdAt DESC
-        LIMIT ${take} OFFSET ${skip}
-      `
-    }
-    const ids = rows.map((r) => r.id)
+  if (nf.q) {
+    const ids = await resolveTextSearchIds(prisma, nf, { limit: take, offset: skip })
     if (ids.length === 0) return []
     where.id = { in: ids }
   }

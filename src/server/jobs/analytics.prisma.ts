@@ -11,82 +11,86 @@ import type {
   SkillsSeriesPoint,
   TopSkill,
 } from '@/features/jobs/types/types'
-import { getPrisma, isSchemaMissingError } from '@/server/db/prisma'
+import { getPrisma, isSchemaMissingError, isPg } from '@/server/db/prisma'
+import { normalizeJobFilters } from '@/server/db/filters/jobFilters'
+import {
+  compileJobSqlWhere,
+  buildTextSearchCTE,
+  textSearchJoin,
+} from '@/server/db/filters/queryCompiler'
 
-// Build WHERE clauses as Prisma.Sql fragments, qualified with a table alias (Postgres only)
-function buildWhereClauses(filters: JobFilters, alias = 'Job'): Prisma.Sql[] {
+// Legacy WHERE builder (pre-compiler behavior) to ensure parity while we validate the compiler
+function buildWhereClausesLegacy(filters: ReturnType<typeof normalizeJobFilters>, alias = 'Job'): Prisma.Sql[] {
   const A = (col: string) => Prisma.raw(`"${alias}"."${col}"`)
   const clauses: Prisma.Sql[] = []
   const approx = Prisma.sql`COALESCE((${A('minTjm')} + ${A('maxTjm')})/2.0, ${A('minTjm')}, ${A('maxTjm')})`
 
-  // free text
-  if (filters.q && filters.q.trim()) {
-    const p = `%${filters.q.trim().toLowerCase()}%`
-    clauses.push(
-      Prisma.sql`(
-        LOWER(COALESCE(${A('title')}, '')) LIKE ${p} OR
-        LOWER(COALESCE(${A('companyName')}, '')) LIKE ${p} OR
-        LOWER(COALESCE(${A('city')}, '')) LIKE ${p} OR
-        LOWER(COALESCE(${A('description')}, '')) LIKE ${p} OR
-        LOWER(COALESCE(${A('candidateProfile')}, '')) LIKE ${p} OR
-        LOWER(COALESCE(${A('companyDescription')}, '')) LIKE ${p}
-      )`,
-    )
-  }
-
-  // cities
   const cities = (filters.cities ?? []).filter(Boolean)
   if (cities.length > 0) {
     if (filters.cityMatch === 'exact') {
-      const inner = Prisma.sql`${A('city')} IN (${Prisma.join(cities)})`
+      const vals = cities.map((c) => c.toLowerCase())
+      const inner = Prisma.sql`LOWER(${A('city')}) IN (${Prisma.join(vals)})`
       clauses.push(filters.excludeCities ? Prisma.sql`NOT (${inner})` : inner)
     } else {
-      const ors = cities.map((c) => Prisma.sql`${A('city')} LIKE ${`%${c}%`}`)
-      const inner = Prisma.sql`(${Prisma.join(ors, ' OR ')})`
-      clauses.push(filters.excludeCities ? Prisma.sql`NOT ${inner}` : inner)
+      if (isPg()) {
+        const ors = cities.map((c) => Prisma.sql`${A('city')} ILIKE ${`%${c}%`}`)
+        const inner = Prisma.sql`(${Prisma.join(ors, ' OR ')})`
+        clauses.push(filters.excludeCities ? Prisma.sql`NOT (${inner})` : inner)
+      } else {
+        const ors = cities.map((c) => Prisma.sql`LOWER(${A('city')}) LIKE ${`%${c.toLowerCase()}%`}`)
+        const inner = Prisma.sql`(${Prisma.join(ors, ' OR ')})`
+        clauses.push(filters.excludeCities ? Prisma.sql`NOT ${inner}` : inner)
+      }
     }
   }
 
-  // regions
   const regions = (filters.regions ?? []).filter(Boolean)
   if (regions.length > 0) {
-    const inner = Prisma.sql`${A('region')} IN (${Prisma.join(regions)})`
+    const vals = regions.map((r) => r.toLowerCase())
+    const inner = Prisma.sql`LOWER(${A('region')}) IN (${Prisma.join(vals)})`
     clauses.push(filters.excludeRegions ? Prisma.sql`NOT (${inner})` : inner)
   }
 
-  // remote
   const remote = (filters.remote ?? []).filter(Boolean)
-  if (remote.length > 0) clauses.push(Prisma.sql`${A('remote')} IN (${Prisma.join(remote)})`)
+  if (remote.length > 0) {
+    const vals = remote.map((r) => r.toLowerCase())
+    clauses.push(Prisma.sql`LOWER(${A('remote')}) IN (${Prisma.join(vals)})`)
+  }
 
-  // experience
   const exp = (filters.experience ?? []).filter(Boolean)
-  if (exp.length > 0) clauses.push(Prisma.sql`${A('experience')} IN (${Prisma.join(exp)})`)
+  if (exp.length > 0) {
+    const vals = exp.map((e) => e.toLowerCase())
+    clauses.push(Prisma.sql`LOWER(${A('experience')}) IN (${Prisma.join(vals)})`)
+  }
 
-  // job slugs
   const slugs = (filters.job_slugs ?? []).filter(Boolean)
-  if (slugs.length > 0) clauses.push(Prisma.sql`${A('jobSlug')} IN (${Prisma.join(slugs)})`)
+  if (slugs.length > 0) {
+    const vals = slugs.map((s) => s.toLowerCase())
+    clauses.push(Prisma.sql`LOWER(${A('jobSlug')}) IN (${Prisma.join(vals)})`)
+  }
 
-  // title exclusions
   const excludeTitle = (filters.excludeTitle ?? []).filter(Boolean)
-  for (const w of excludeTitle) clauses.push(Prisma.sql`${A('title')} NOT LIKE ${`%${w}%`}`)
+  for (const w of excludeTitle) {
+    clauses.push(
+      isPg()
+        ? Prisma.sql`${A('title')} NOT ILIKE ${`%${w}%`}`
+        : Prisma.sql`LOWER(${A('title')}) NOT LIKE ${`%${w.toLowerCase()}%`}`,
+    )
+  }
 
-  // dates
   if (filters.startDate)
     clauses.push(Prisma.sql`${A('createdAt')} >= ${new Date(filters.startDate)}`)
   if (filters.endDate) clauses.push(Prisma.sql`${A('createdAt')} <= ${new Date(filters.endDate)}`)
 
-  // TJM approx
   if (typeof filters.minTjm === 'number') clauses.push(Prisma.sql`${approx} >= ${filters.minTjm}`)
   if (typeof filters.maxTjm === 'number') clauses.push(Prisma.sql`${approx} <= ${filters.maxTjm}`)
 
-  // skills: require ALL listed hard skills
   const mustSkills = (filters.skills ?? []).filter(Boolean)
   for (const s of mustSkills) {
     clauses.push(
       Prisma.sql`EXISTS (SELECT 1 FROM "JobSkill" js INNER JOIN "Skill" sk ON sk.id = js."skillId" WHERE js."jobId" = ${A('id')} AND js.kind = 'HARD' AND sk.name = ${s})`,
     )
   }
-  // excludeSkills: require none
   const notSkills = (filters.excludeSkills ?? []).filter(Boolean)
   for (const s of notSkills) {
     clauses.push(
@@ -101,6 +105,7 @@ export async function getTopSkillsDb(
   filters: JobFilters,
   topSkillsCount = 50,
 ): Promise<TopSkill[]> {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -108,15 +113,20 @@ export async function getTopSkillsDb(
     if (process.env.NODE_ENV !== 'production' && isSchemaMissingError(e)) return []
     throw e
   }
-  const base = buildWhereClauses(filters, 'Job')
+  // Use legacy where builder for stability
+  const base = buildWhereClausesLegacy(nf, 'j')
+  const cte = buildTextSearchCTE(nf, 'q')
+  const joinQ = textSearchJoin(nf, 'j', 'q')
   const where = [...base, Prisma.sql`js.kind = 'HARD'`]
   const whereSql = where.length ? Prisma.sql`WHERE ${Prisma.join(where, ' AND ')}` : Prisma.sql``
   let rows: Array<{ skill: string; cnt: number }> = []
   try {
     rows = await prisma.$queryRaw<Array<{ skill: string; cnt: number }>>(Prisma.sql`
+      ${cte}
       SELECT sk.name AS skill, COUNT(*) AS cnt
       FROM "JobSkill" js
-      JOIN "Job" Job ON Job.id = js."jobId"
+      JOIN "Job" j ON j.id = js."jobId"
+      ${joinQ}
       JOIN "Skill" sk ON sk.id = js."skillId"
       ${whereSql}
       GROUP BY sk.name
@@ -136,6 +146,7 @@ export async function getMetricsDb(
   topSkillsCount = 10,
   seriesOverride?: string[],
 ): Promise<AnalyticsResult> {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -151,7 +162,10 @@ export async function getMetricsDb(
       }
     throw e
   }
-  const baseClauses = buildWhereClauses(filters, 'Job')
+  // Use legacy where builder for stability
+  const baseClauses = buildWhereClausesLegacy(nf, 'j')
+  const cte = buildTextSearchCTE(nf, 'q')
+  const joinQ = textSearchJoin(nf, 'j', 'q')
   const whereSql = baseClauses.length
     ? Prisma.sql`WHERE ${Prisma.join(baseClauses, ' AND ')}`
     : Prisma.sql``
@@ -161,7 +175,12 @@ export async function getMetricsDb(
   let postingsRaw: Array<{ m: string; c: number }>
   try {
     postingsRaw = await prisma.$queryRaw<Array<{ m: string; c: number }>>(Prisma.sql`
-      SELECT ${Prisma.raw(mExpr)} AS m, COUNT(*) AS c FROM "Job" Job ${whereSql} GROUP BY m ORDER BY m
+      ${cte}
+      SELECT ${Prisma.raw(mExpr)} AS m, COUNT(*) AS c
+      FROM "Job" j
+      ${joinQ}
+      ${whereSql}
+      GROUP BY m ORDER BY m
     `)
   } catch (e) {
     if (!isSchemaMissingError(e)) throw e
@@ -174,9 +193,12 @@ export async function getMetricsDb(
   let avgRaw: Array<{ m: string; v: number }>
   try {
     avgRaw = await prisma.$queryRaw<Array<{ m: string; v: number }>>(Prisma.sql`
+      ${cte}
       SELECT ${Prisma.raw(mExpr)} AS m,
              AVG(COALESCE(("minTjm" + "maxTjm")/2.0, "minTjm", "maxTjm")) AS v
-      FROM "Job" Job ${whereSql}
+      FROM "Job" j
+      ${joinQ}
+      ${whereSql}
       GROUP BY m
       ORDER BY m
     `)
@@ -200,11 +222,14 @@ export async function getMetricsDb(
   let skillsCounts: Array<{ m: string; skill: string; c: number }> = []
   if (seriesList.length > 0) {
     const jmExpr = `to_char(j."createdAt", 'YYYY-MM')`
-    const baseJ = buildWhereClauses(filters, 'j')
+    // Use legacy where builder for stability
+    const baseJ = buildWhereClausesLegacy(nf, 'j')
+    const joinQj = textSearchJoin(nf, 'j', 'q')
+    const cte2 = cte // reuse same CTE
     const whereJ = [
       ...baseJ,
       Prisma.sql`js.kind = 'HARD'`,
-      Prisma.sql`sk.name IN (${Prisma.join(seriesList)})`,
+      Prisma.sql`LOWER(sk.name) IN (${Prisma.join(seriesList.map((s) => s.toLowerCase()))})`,
     ]
     const whereJSql = whereJ.length
       ? Prisma.sql`WHERE ${Prisma.join(whereJ, ' AND ')}`
@@ -214,9 +239,11 @@ export async function getMetricsDb(
       skillsCountsRaw = await prisma.$queryRaw<
         Array<{ m: string; skill: string; c: number }>
       >(Prisma.sql`
+        ${cte2}
         SELECT ${Prisma.raw(jmExpr)} AS m, sk.name AS skill, COUNT(*) AS c
         FROM "JobSkill" js
         JOIN "Job" j ON j.id = js."jobId"
+        ${joinQj}
         JOIN "Skill" sk ON sk.id = js."skillId"
         ${whereJSql}
         GROUP BY m, skill
@@ -267,6 +294,7 @@ export async function getEmergingDb(
   topK = 10,
   minTotalCount = 5,
 ): Promise<EmergingSkillTrendPayload> {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -276,15 +304,20 @@ export async function getEmergingDb(
     throw e
   }
   const jmExpr = `to_char(j."createdAt", 'YYYY-MM')`
-  const baseJ = buildWhereClauses(filters, 'j')
+  // Use legacy where builder for stability
+  const baseJ = buildWhereClausesLegacy(nf, 'j')
+  const cte = buildTextSearchCTE(nf, 'q')
+  const joinQ = textSearchJoin(nf, 'j', 'q')
   const whereJ = [...baseJ, Prisma.sql`js.kind = 'HARD'`]
   const whereJSql = whereJ.length ? Prisma.sql`WHERE ${Prisma.join(whereJ, ' AND ')}` : Prisma.sql``
   let rows: Array<{ m: string; skill: string; c: number }>
   try {
     rows = await prisma.$queryRaw<Array<{ m: string; skill: string; c: number }>>(Prisma.sql`
+      ${cte}
       SELECT ${Prisma.raw(jmExpr)} AS m, sk.name AS skill, COUNT(*) AS c
       FROM "JobSkill" js
       JOIN "Job" j ON j.id = js."jobId"
+      ${joinQ}
       JOIN "Skill" sk ON sk.id = js."skillId"
       ${whereJSql}
       GROUP BY m, skill
@@ -364,6 +397,7 @@ export async function getCitySkillTrendDb(
   seriesCities?: string[],
   topCityCount = 5,
 ) {
+  const nf = normalizeJobFilters(filters)
   let prisma: Awaited<ReturnType<typeof getPrisma>>
   try {
     prisma = await getPrisma()
@@ -372,7 +406,10 @@ export async function getCitySkillTrendDb(
       return { months: [], citySeries: {}, topCities: [] }
     throw e
   }
-  const baseJ = buildWhereClauses(filters, 'j')
+  // Use legacy where builder for stability
+  const baseJ = buildWhereClausesLegacy(nf, 'j')
+  const cte = buildTextSearchCTE(nf, 'q')
+  const joinQ = textSearchJoin(nf, 'j', 'q')
   const jcExpr = `to_char(j."createdAt", 'YYYY-MM')`
   const whereJ = [
     ...baseJ,
@@ -385,9 +422,11 @@ export async function getCitySkillTrendDb(
     rowsCity = await prisma.$queryRaw<
       Array<{ m: string; city: string | null; c: number }>
     >(Prisma.sql`
+      ${cte}
       SELECT ${Prisma.raw(jcExpr)} AS m, COALESCE(j.city, '—') AS city, COUNT(*) AS c
       FROM "JobSkill" js
       JOIN "Job" j ON j.id = js."jobId"
+      ${joinQ}
       JOIN "Skill" sk ON sk.id = js."skillId"
       ${whereJSql}
       GROUP BY m, city
