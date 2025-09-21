@@ -1,9 +1,9 @@
 import type { Prisma } from '@prisma/client'
-import { Prisma as PrismaNS } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
+import { Prisma as PrismaNS } from '@prisma/client'
 
-import type { NormalizedJobFilters } from './jobFilters'
 import { isPg } from '../client'
+import type { NormalizedJobFilters } from './jobFilters'
 
 // Prisma compiler: NormalizedJobFilters -> Prisma.JobWhereInput
 export function compileJobWhere(nf: NormalizedJobFilters): Prisma.JobWhereInput {
@@ -26,7 +26,7 @@ export function compileJobWhere(nf: NormalizedJobFilters): Prisma.JobWhereInput 
 
   // Title exclusions
   for (const w of nf.excludeTitle) {
-    AND.push({ title: { not: { contains: w, mode: 'insensitive' } } })
+    AND.push({ NOT: { title: { contains: w, mode: 'insensitive' } } })
   }
 
   // Cities

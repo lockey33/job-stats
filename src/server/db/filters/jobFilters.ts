@@ -36,7 +36,7 @@ export function normalizeJobFilters(f: JobFilters | undefined): NormalizedJobFil
   const startDate = filters.startDate && String(filters.startDate).trim() ? String(filters.startDate) : undefined
   const endDate = filters.endDate && String(filters.endDate).trim() ? String(filters.endDate) : undefined
 
-  return {
+  const out: NormalizedJobFilters = {
     q,
     skills: uniqTrim(filters.skills),
     excludeSkills: uniqTrim(filters.excludeSkills),
@@ -49,10 +49,12 @@ export function normalizeJobFilters(f: JobFilters | undefined): NormalizedJobFil
     cityMatch,
     excludeCities: Boolean(filters.excludeCities),
     excludeRegions: Boolean(filters.excludeRegions),
-    minTjm,
-    maxTjm,
-    startDate,
-    endDate,
   }
+  if (typeof minTjm === 'number') out.minTjm = minTjm
+  if (typeof maxTjm === 'number') out.maxTjm = maxTjm
+  if (startDate !== undefined) out.startDate = startDate
+  if (endDate !== undefined) out.endDate = endDate
+
+  return out
 }
 

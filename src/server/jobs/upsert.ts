@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Prisma, PrismaClient } from '@prisma/client'
 
-import { JobItemSchema, type JobItemInput } from '@/features/jobs/utils/schemas'
+import { type JobItemInput,JobItemSchema } from '@/features/jobs/utils/schemas'
 import { cityToRegion } from '@/shared/geo/regions'
 
 export type IngestJob = JobItemInput

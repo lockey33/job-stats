@@ -11,13 +11,12 @@ import type {
   SkillsSeriesPoint,
   TopSkill,
 } from '@/features/jobs/types/types'
-import { getPrisma, isSchemaMissingError, isPg } from '@/server/db/prisma'
 import { normalizeJobFilters } from '@/server/db/filters/jobFilters'
 import {
-  compileJobSqlWhere,
   buildTextSearchCTE,
   textSearchJoin,
 } from '@/server/db/filters/queryCompiler'
+import { getPrisma, isPg,isSchemaMissingError } from '@/server/db/prisma'
 
 // Legacy WHERE builder (pre-compiler behavior) to ensure parity while we validate the compiler
 function buildWhereClausesLegacy(filters: ReturnType<typeof normalizeJobFilters>, alias = 'Job'): Prisma.Sql[] {

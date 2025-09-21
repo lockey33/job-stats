@@ -3,9 +3,7 @@ import 'server-only'
 import type { PrismaClient } from '@prisma/client'
 
 declare global {
-  // eslint-disable-next-line no-var
   var __PRISMA_CLIENT__: PrismaClient | undefined
-  // eslint-disable-next-line no-var
   var __PRISMA_MW_INSTALLED__: boolean | undefined
 }
 
