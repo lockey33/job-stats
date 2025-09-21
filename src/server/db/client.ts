@@ -2,6 +2,8 @@ import 'server-only'
 
 import type { PrismaClient } from '@prisma/client'
 
+import { logger } from '@/server/http/logger'
+
 declare global {
   var __PRISMA_CLIENT__: PrismaClient | undefined
   var __PRISMA_MW_INSTALLED__: boolean | undefined
@@ -21,10 +23,12 @@ export async function getPrisma(): Promise<PrismaClient> {
         String((e as Error)?.message || e),
     )
   })
+
   type PrismaModule = typeof import('@prisma/client')
   const { PrismaClient } = mod as unknown as PrismaModule
 
   const url = process.env.DATABASE_URL
+
   if (!url) throw new Error('DATABASE_URL is not set')
 
   const client = new PrismaClient({ datasources: { db: { url } } })
@@ -32,25 +36,33 @@ export async function getPrisma(): Promise<PrismaClient> {
   // Install timing middleware once per process
   if (!globalThis.__PRISMA_MW_INSTALLED__) {
     const slowMs = Number(process.env.DB_SLOW_MS || '300')
+
     client.$use(async (params, next) => {
       const start = Date.now()
+
       try {
         const result = await next(params)
         const ms = Date.now() - start
+
         if (ms >= slowMs) {
           // Avoid logging query payloads/params to reduce noise and leakage risk
           const model = params.model || 'raw'
           const action = params.action
+
           // Keep concise logs; let downstream observability aggregate
-          console.warn(`[prisma] slow query: ${model}.${action} took ${ms}ms`)
+          logger.warn(`[prisma] slow query: ${model}.${action} took ${ms}ms`)
         }
+
         return result
       } catch (err) {
         const ms = Date.now() - start
         const model = params.model || 'raw'
         const action = params.action
+
         // Surface timing on errors too
-        console.warn(`[prisma] error in ${model}.${action} after ${ms}ms: ${(err as Error)?.message}`)
+        logger.warn(
+          `[prisma] error in ${model}.${action} after ${ms}ms: ${(err as Error)?.message}`,
+        )
         throw err
       }
     })
@@ -58,25 +70,25 @@ export async function getPrisma(): Promise<PrismaClient> {
   }
 
   globalThis.__PRISMA_CLIENT__ = client
+
   return client
 }
 
 /** Detect if the configured datasource targets Postgres */
-export function isPg(): boolean {
-  const url = process.env.DATABASE_URL || ''
-  return url.startsWith('postgres') || url.includes('neon.tech') || url.includes('vercel-postgres')
-}
+// PostgreSQL is the only supported DB in all environments.
 
 /** Heuristic to detect schema-not-ready errors in dev (missing tables/columns, etc.) */
 export function isSchemaMissingError(e: unknown): boolean {
   const any = e as { code?: string; message?: string }
   const code = any?.code || ''
   const msg = any?.message || ''
+
   // Prisma codes: P2021 (table not found), P2022 (column), P2010 (raw query failed)
   if (code === 'P2021' || code === 'P2022' || code === 'P2010') return true
   if (/no such table/i.test(msg)) return true
   if (/relation .* does not exist/i.test(msg)) return true
   if (/DATABASE_URL is not set/i.test(msg)) return true
+
   return false
 }
 
@@ -90,12 +102,14 @@ export async function dbGuard<T>(
   fallback: T,
 ): Promise<T> {
   let prisma: PrismaClient
+
   try {
     prisma = await getPrisma()
   } catch (e) {
     if (process.env.NODE_ENV !== 'production' && isSchemaMissingError(e)) return fallback
     throw e
   }
+
   try {
     return await op(prisma)
   } catch (e) {
@@ -103,4 +117,3 @@ export async function dbGuard<T>(
     throw e
   }
 }
-

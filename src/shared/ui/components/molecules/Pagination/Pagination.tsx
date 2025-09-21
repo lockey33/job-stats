@@ -23,6 +23,7 @@ export default function Pagination({
 }: Props) {
   const start = (page - 1) * pageSize + 1
   const end = Math.min(total, page * pageSize)
+
   return (
     <Box
       role="navigation"
@@ -46,6 +47,7 @@ export default function Pagination({
           <HStack gap="xs">
             {pageSizeOptions.map((opt) => {
               const active = pageSize === opt
+
               return (
                 <Button
                   key={opt}
@@ -73,6 +75,7 @@ export default function Pagination({
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
               if (e.key === 'Enter') {
                 const val = Number((e.target as HTMLInputElement).value)
+
                 if (!isNaN(val)) onPageChange(Math.max(1, Math.min(pageCount, val)))
               }
             }}

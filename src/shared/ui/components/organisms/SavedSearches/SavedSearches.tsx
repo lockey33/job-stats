@@ -33,6 +33,7 @@ export default function SavedSearches({ currentFilters, onApply, className }: Pr
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
+
       if (raw) setItems(JSON.parse(raw))
     } catch (e) {
       console.warn('Failed to load saved searches', e)
@@ -58,6 +59,7 @@ export default function SavedSearches({ currentFilters, onApply, className }: Pr
       filters: { ...currentFilters },
       createdAt: new Date().toISOString(),
     }
+
     setItems((prev) => [item, ...prev])
     setName('')
   }
@@ -74,6 +76,7 @@ export default function SavedSearches({ currentFilters, onApply, className }: Pr
     try {
       const qs = toQueryString({ ...it.filters, page: 1 })
       const url = `${window.location.origin}${window.location.pathname}?${qs}`
+
       await navigator.clipboard.writeText(url)
     } catch (e) {
       console.warn('Clipboard copy failed', e)

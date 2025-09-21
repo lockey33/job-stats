@@ -1,11 +1,15 @@
 export function decodeHtmlEntities(input: string): string {
   if (!input) return ''
+
   // Prefer DOM-based decoding when available (client-side)
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const el = document.createElement('textarea')
+
     el.innerHTML = input
+
     return el.value
   }
+
   // Fallback: handle common named + numeric entities
   return input
     .replace(/&nbsp;/g, ' ')
@@ -23,6 +27,7 @@ export function decodeHtmlEntities(input: string): string {
 export function htmlToPlainText(html?: string | null): string {
   if (!html) return ''
   let s = html
+
   // Convert meaningful breaks to newlines before stripping
   s = s.replace(/<\s*br\s*\/?\s*>/gi, '\n')
   s = s.replace(/<\/(p|div|li|h[1-6]|ul|ol)\s*>/gi, '\n')
@@ -39,5 +44,6 @@ export function htmlToPlainText(html?: string | null): string {
     .replace(/\s*\n\s*/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+
   return s
 }

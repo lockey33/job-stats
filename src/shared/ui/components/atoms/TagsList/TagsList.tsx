@@ -25,6 +25,7 @@ export default function TagsList({
   onRemove,
 }: Props) {
   if (!items || items.length === 0) return null
+
   return (
     <Box display="flex" flexWrap="wrap" gap={gap}>
       {items.map((s, idx) => (

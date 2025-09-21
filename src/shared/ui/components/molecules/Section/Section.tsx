@@ -12,6 +12,7 @@ interface Props {
 
 export default function Section({ id, title, subtitle, actions, children }: Props) {
   const hasHeader = !!title || !!subtitle || !!actions
+
   return (
     <Box
       id={id}

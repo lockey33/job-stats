@@ -10,8 +10,10 @@ import type {
   JobsResult,
   TopSkill,
 } from '@/features/jobs/types/types'
-import { getEmergingDb, getMetricsDb, getTopSkillsDb } from '@/server/jobs/analytics.prisma'
-import { getMetaFacetsDb, queryJobsDb } from '@/server/jobs/repository.prisma'
+import { getEmergingDb } from '@/server/jobs/analytics/emerging'
+import { getMetricsDb } from '@/server/jobs/analytics/metrics'
+import { getTopSkillsDb } from '@/server/jobs/analytics/topSkills'
+import { getMetaFacetsDb, queryJobsDb } from '@/server/jobs/repository'
 
 export function metaQuery(): FetchQueryOptions<
   Awaited<ReturnType<typeof getMetaFacetsDb>>,
@@ -32,6 +34,7 @@ export function jobsQuery(params: {
   filters: Partial<JobFilters>
 }): FetchQueryOptions<JobsResult, Error, JobsResult> {
   const { page, pageSize, filters } = params
+
   return {
     queryKey: queryKeys.jobs({ page, pageSize, ...filters }),
     queryFn: async () => {

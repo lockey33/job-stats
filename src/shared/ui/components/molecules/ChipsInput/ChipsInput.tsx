@@ -1,8 +1,9 @@
 'use client'
 
 import { Box, Input } from '@chakra-ui/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside'
 import CloseableTag from '@/shared/ui/components/atoms/CloseableTag/CloseableTag'
 
 function norm(s: string): string {
@@ -30,11 +31,15 @@ export default function ChipsInput({
   const addChip = useCallback(
     (raw: string) => {
       const n = norm(raw)
+
       if (!n) return
+
       if (normSet.has(n)) {
         setInput('')
+
         return
       }
+
       onChange([...value, raw.trim()])
       setInput('')
     },
@@ -48,6 +53,7 @@ export default function ChipsInput({
     } else if (e.key === 'Backspace' && input === '' && value.length > 0) {
       // quick remove last chip
       const next = value.slice(0, -1)
+
       onChange(next)
     }
   }
@@ -55,21 +61,15 @@ export default function ChipsInput({
   const removeChip = useCallback(
     (s: string) => {
       const n = norm(s)
+
       onChange(value.filter((v) => norm(v) !== n))
     },
     [onChange, value],
   )
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current) return
-      if (!containerRef.current.contains(e.target as Node)) {
-        if (addOnBlur && input.trim()) addChip(input)
-      }
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [input, addOnBlur, addChip])
+  useOnClickOutside(containerRef, () => {
+    if (addOnBlur && input.trim()) addChip(input)
+  })
 
   return (
     <Box ref={containerRef} w="full">

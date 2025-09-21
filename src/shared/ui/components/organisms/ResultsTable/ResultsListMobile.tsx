@@ -13,7 +13,9 @@ interface Props {
 function formatDate(input?: string | null): string {
   if (!input) return '—'
   const d = new Date(input)
+
   if (isNaN(d.getTime())) return '—'
+
   try {
     return new Intl.DateTimeFormat('fr-FR').format(d)
   } catch {
@@ -23,6 +25,7 @@ function formatDate(input?: string | null): string {
 
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase()
+
   switch (v) {
     case 'junior':
       return 'Junior'
@@ -37,6 +40,7 @@ function formatExperience(exp?: string | null): string {
 
 export default function ResultsListMobile({ items, onSelect }: Props) {
   if (!items || items.length === 0) return null
+
   return (
     <Box display="grid" gridTemplateColumns="1fr" gap="sm">
       {items.map((it, idx) => {
@@ -48,11 +52,14 @@ export default function ResultsListMobile({ items, onSelect }: Props) {
         const tjmText = (() => {
           const fmt = new Intl.NumberFormat('fr-FR')
           const has = it.min_tjm || it.max_tjm
+
           if (!has) return '—'
           const left = fmt.format(it.min_tjm ?? it.max_tjm ?? 0)
           const right = it.max_tjm ? `–${fmt.format(it.max_tjm)}` : ''
+
           return `${left}${right} €`
         })()
+
         return (
           <Box
             key={`${it.id}-${it.created_at ?? ''}-${idx}`}

@@ -48,10 +48,12 @@ export default function FilterPanel({
 
   const update = (patch: Record<string, unknown>) => {
     const next = { ...value } as JobFilters & Record<string, unknown>
+
     for (const [k, v] of Object.entries(patch)) {
       if (typeof v === 'undefined') delete next[k]
       else next[k] = v
     }
+
     onChange(next as JobFilters)
   }
 
@@ -59,9 +61,12 @@ export default function FilterPanel({
   function ymdToDate(ymd?: string): Date | null {
     if (!ymd) return null
     const parts = ymd.split('-').map((n) => Number(n))
+
     if (parts.length !== 3) return null
     const [y, m, d] = parts
+
     if (!y || !m || !d) return null
+
     return new Date(y, m - 1, d)
   }
 
@@ -76,6 +81,7 @@ export default function FilterPanel({
     const mt = first ? '0' : compact ? 'sm' : 'sm'
     const pt = compact && !first ? 'md' : undefined
     const borderTopWidth = compact && !first ? '1px' : '0px'
+
     return (
       <Box
         gridColumn={gc('span 12')}
@@ -266,12 +272,14 @@ export default function FilterPanel({
           <HStack gap="sm" wrap="wrap">
             {remoteOptions.map((r) => {
               const checked = (value.remote ?? []).includes(r)
+
               return (
                 <Checkbox.Root
                   key={r}
                   checked={checked}
                   onCheckedChange={(d: CheckboxCheckedChangeDetails) => {
                     const cur = new Set(value.remote ?? [])
+
                     if (d.checked) cur.add(r)
                     else cur.delete(r)
                     update({ remote: Array.from(cur) })
@@ -297,12 +305,14 @@ export default function FilterPanel({
           <HStack gap="sm" wrap="wrap">
             {expOptions.map((exp) => {
               const checked = (value.experience ?? []).includes(exp)
+
               return (
                 <Checkbox.Root
                   key={exp}
                   checked={checked}
                   onCheckedChange={(d: CheckboxCheckedChangeDetails) => {
                     const cur = new Set(value.experience ?? [])
+
                     if (d.checked) cur.add(exp)
                     else cur.delete(exp)
                     update({ experience: Array.from(cur) })
@@ -332,6 +342,7 @@ export default function FilterPanel({
             value={value.minTjm ?? ''}
             onChange={(e) => {
               const v = e.target.value ? Number(e.target.value) : undefined
+
               if (typeof v === 'number') update({ minTjm: v })
               else update({ minTjm: undefined })
             }}
@@ -349,6 +360,7 @@ export default function FilterPanel({
             value={value.maxTjm ?? ''}
             onChange={(e) => {
               const v = e.target.value ? Number(e.target.value) : undefined
+
               if (typeof v === 'number') update({ maxTjm: v })
               else update({ maxTjm: undefined })
             }}
@@ -367,6 +379,7 @@ export default function FilterPanel({
             selected={ymdToDate(value.startDate)}
             onChange={(d: Date | null) => {
               const sv = dateToYmd(d)
+
               if (sv) update({ startDate: sv })
               else update({ startDate: undefined })
             }}
@@ -392,6 +405,7 @@ export default function FilterPanel({
             selected={ymdToDate(value.endDate)}
             onChange={(d: Date | null) => {
               const ev = dateToYmd(d)
+
               if (ev) update({ endDate: ev })
               else update({ endDate: undefined })
             }}

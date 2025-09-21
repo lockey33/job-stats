@@ -19,6 +19,7 @@ export default function SearchBar({
   delayMs = 400,
 }: Props) {
   const [text, setText] = useState<string>(value)
+
   // keep local state in sync when parent value changes (e.g., reset filters)
   useEffect(() => {
     setText(value || '')

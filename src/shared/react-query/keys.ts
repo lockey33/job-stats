@@ -3,15 +3,19 @@ import { stableStringify } from '@/shared/utils/stableStringify'
 // Normalize query params for keys/ETags: remove undefineds, sort arrays of primitives
 export function normalizeKeyParams(params: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
+
   for (const [k, v] of Object.entries(params || {})) {
     if (v === undefined) continue
+
     if (Array.isArray(v)) {
       const arr = v
         .filter((x) => x !== undefined && x !== null && x !== '')
         .map((x) => (typeof x === 'number' || typeof x === 'boolean' ? x : String(x)))
+
       try {
         arr.sort((a, b) => String(a).localeCompare(String(b)))
       } catch {}
+
       out[k] = arr
     } else if (v && typeof v === 'object') {
       // shallow normalize for nested objects
@@ -20,6 +24,7 @@ export function normalizeKeyParams(params: Record<string, unknown>): Record<stri
       out[k] = v
     }
   }
+
   return out
 }
 

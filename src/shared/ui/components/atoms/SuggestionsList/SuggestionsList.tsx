@@ -10,6 +10,7 @@ interface Props {
 
 export default function SuggestionsList({ items, onSelect, overlay = false }: Props) {
   if (!items || items.length === 0) return null
+
   return (
     <Box
       role="listbox"

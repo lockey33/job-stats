@@ -1,21 +1,10 @@
-import { getDbVersion, getMetaFacetsDb } from '@/server/jobs/repository.prisma'
+import { withCachedRateLimitedApi } from '@/server/http/handler'
+import { getMetaFacetsDb } from '@/server/jobs/repository'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(_req: Request) {
-  try {
-    const [facets, version] = await Promise.all([getMetaFacetsDb(), getDbVersion()])
-
-    return Response.json(facets, {
-      status: 200,
-      headers: {
-        'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
-        'X-Data-Version': version,
-      },
-    })
-  } catch (e: unknown) {
-    console.error('[api/meta] error:', e)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+export const GET = withCachedRateLimitedApi(
+  { windowMs: 60_000, max: 30, by: 'ip+path' },
+  async () => Response.json(await getMetaFacetsDb()),
+)

@@ -16,8 +16,10 @@ interface Props {
 function formatTjm(min?: number | null, max?: number | null) {
   if (min == null && max == null) return '—'
   const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+
   if (min != null && max != null) return `${fmt(min)}–${fmt(max)} €`
   const v = (min ?? max) as number
+
   return `${fmt(v)} €`
 }
 
@@ -25,6 +27,7 @@ function formatTjm(min?: number | null, max?: number | null) {
 
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase()
+
   switch (v) {
     case 'junior':
       return 'Junior'
@@ -39,6 +42,7 @@ function formatExperience(exp?: string | null): string {
 
 function formatRemote(remote?: string | null): string {
   const v = (remote || '').toString().toLowerCase()
+
   switch (v) {
     case 'full':
       return 'Total'
@@ -57,6 +61,7 @@ export default function JobDetailsDrawer({ job, onClose }: Props) {
   const region = job ? (cityToRegion(job.city ?? undefined) ?? '—') : '—'
 
   const [copied, setCopied] = useState(false)
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href)

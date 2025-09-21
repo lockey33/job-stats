@@ -6,6 +6,7 @@ export const CITY_CHART_MARGIN: Margin = { top: 10, right: 20, bottom: 0, left: 
 export function xAxisProps(isMobile: boolean) {
   const interval: 'preserveStartEnd' | 'preserveEnd' = isMobile ? 'preserveStartEnd' : 'preserveEnd'
   const tick: boolean = !isMobile
+
   return {
     type: 'category' as const,
     scale: 'point' as const,

@@ -16,13 +16,16 @@ interface Props {
 function formatTjm(min?: number | null, max?: number | null) {
   if (min == null && max == null) return '—'
   const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+
   if (min != null && max != null) return `${fmt(min)}–${fmt(max)} €`
   const v = (min ?? max) as number
+
   return `${fmt(v)} €`
 }
 
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase()
+
   switch (v) {
     case 'junior':
       return 'Junior'
@@ -37,6 +40,7 @@ function formatExperience(exp?: string | null): string {
 
 function formatRemote(remote?: string | null): string {
   const v = (remote || '').toString().toLowerCase()
+
   switch (v) {
     case 'full':
       return 'Total'
@@ -56,7 +60,9 @@ export default function JobDetailsModal({ job, onClose }: Props) {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
+
     document.addEventListener('keydown', onKey)
+
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 

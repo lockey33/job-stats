@@ -26,6 +26,7 @@ export default function ResultsToolbar({
   onRightAction,
 }: Props) {
   const fmt = new Intl.NumberFormat('fr-FR')
+
   return (
     <Box as="section" w="full" py="sm">
       {/* Mobile: 2 buttons (Filtrer + Actions) and the count on the same line */}

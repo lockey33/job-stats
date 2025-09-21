@@ -20,6 +20,7 @@ export default function LazyOnVisible({
 
   useEffect(() => {
     const el = ref.current
+
     if (!el) return
 
     const obs = new IntersectionObserver(
@@ -35,7 +36,9 @@ export default function LazyOnVisible({
       },
       { root: null, rootMargin, threshold: 0 },
     )
+
     obs.observe(el)
+
     return () => obs.disconnect()
   }, [rootMargin, once])
 

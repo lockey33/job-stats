@@ -29,11 +29,14 @@ export default function FilterDrawer({ isOpen, onClose, meta, filters, onChange 
   const updateSearch = useCallback((q: string) => {
     setDraft((prev) => {
       const next = { ...prev } as JobFilters & Record<string, unknown>
+
       if (q) next.q = q
       else delete next.q
+
       return next as JobFilters
     })
   }, [])
+
   function confirm() {
     onChange(draft)
     onClose()

@@ -6,6 +6,7 @@ const csvToArray = (raw: string | null | undefined): string[] | undefined => {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+
   return arr.length > 0 ? arr : undefined
 }
 
@@ -27,12 +28,14 @@ export function parseMetricsParams(searchParams: URLSearchParams) {
     seriesSkills: csvToArray(searchParams.get('seriesSkills')),
     topSkillsCount: searchParams.get('topSkillsCount') ?? undefined,
   }
+
   return schema.parse(input)
 }
 
 export function parseTopSkillsParams(searchParams: URLSearchParams) {
   const schema = z.object({ count: intClamped(1, 200, 50) })
   const input = { count: searchParams.get('count') ?? undefined }
+
   return schema.parse(input)
 }
 
@@ -47,6 +50,7 @@ export function parseEmergingParams(searchParams: URLSearchParams) {
     topK: searchParams.get('topK') ?? undefined,
     minTotalCount: searchParams.get('minTotalCount') ?? undefined,
   }
+
   return schema.parse(input)
 }
 
@@ -61,5 +65,6 @@ export function parseCitySkillParams(searchParams: URLSearchParams) {
     seriesCities: csvToArray(searchParams.get('seriesCities')),
     topCityCount: searchParams.get('topCityCount') ?? undefined,
   }
+
   return schema.parse(input)
 }

@@ -61,9 +61,11 @@ export function parseFiltersFromSearchParams(
   const { page, pageSize, ...rest } = parsed
   // Remove undefineds to satisfy exactOptionalPropertyTypes
   const cleaned: Record<string, unknown> = {}
+
   for (const [k, v] of Object.entries(rest)) {
     if (typeof v !== 'undefined') cleaned[k] = v
   }
+
   return { ...(cleaned as JobFilters), page, pageSize }
 }
 
@@ -71,6 +73,7 @@ export function toQueryString(
   filters: Partial<JobFilters & { page: number; pageSize: number }>,
 ): string {
   const params = new URLSearchParams()
+
   const addArray = (key: string, arr?: string[]) => {
     if (!arr || arr.length === 0) return
     params.set(key, arr.join(','))

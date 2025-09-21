@@ -143,17 +143,23 @@ export const DEPT_TO_REGION: Record<string, string> = {
 export function extractDepartmentCodeFromCity(city?: string | null): string | null {
   if (!city) return null
   const m = city.match(/\((\d{2}|2A|2B|97\d|98\d)\)/i)
+
   if (!m) return null
   const raw = m[1]
+
   if (!raw) return null
   const up = raw.toUpperCase()
+
   if (up.length === 1) return up.padStart(2, '0')
   if (up.length === 2 && /^\d{1}$/.test(up)) return up.padStart(2, '0')
+
   return up
 }
 
 export function cityToRegion(city?: string | null): string | null {
   const dept = extractDepartmentCodeFromCity(city)
+
   if (!dept) return null
+
   return DEPT_TO_REGION[dept] ?? null
 }

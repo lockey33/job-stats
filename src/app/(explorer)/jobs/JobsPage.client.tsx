@@ -6,20 +6,6 @@ import dynamic from 'next/dynamic'
 import { parseAsInteger, useQueryState } from 'nuqs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import LazyOnVisible from '@/shared/ui/components/atoms/LazyOnVisible/LazyOnVisible'
-import Section from '@/shared/ui/components/molecules/Section/Section'
-import type { TrendsOptions } from '@/shared/ui/components/molecules/TrendsControls/TrendsControls'
-const FilterDrawer = dynamic(
-  () => import('@/shared/ui/components/organisms/FilterDrawer/FilterDrawer'),
-  {
-    ssr: false,
-  },
-)
-import JobDetailsDrawer from '@/shared/ui/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
-const CitySkillTrendView = dynamic(
-  () => import('@/shared/ui/components/organisms/CitySkillTrendView/CitySkillTrendView'),
-  { ssr: false },
-)
 import { useEmerging, useJobs, useMeta, useMetrics, useTopSkills } from '@/features/jobs/api'
 import { fetchJobById, fetchJobs } from '@/features/jobs/api/endpoints'
 import { queryKeys } from '@/features/jobs/api/queryKeys'
@@ -27,8 +13,22 @@ import { useExport } from '@/features/jobs/hooks/useExport'
 import type { JobFilters, JobItem } from '@/features/jobs/types/types'
 import JobsChartsSection from '@/features/jobs/ui/components/organisms/JobsChartSection/JobsChartsSection'
 import JobsResultsSection from '@/features/jobs/ui/components/organisms/JobsResultsSection/JobsResultsSection'
+import { countActiveFilters } from '@/features/jobs/utils/filterCount'
+import LazyOnVisible from '@/shared/ui/components/atoms/LazyOnVisible/LazyOnVisible'
+import Section from '@/shared/ui/components/molecules/Section/Section'
+import type { TrendsOptions } from '@/shared/ui/components/molecules/TrendsControls/TrendsControls'
+import JobDetailsDrawer from '@/shared/ui/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
 
 import { type FiltersFormValues, useExplorerState } from './hooks/useExplorerState'
+
+const FilterDrawer = dynamic(
+  () => import('@/shared/ui/components/organisms/FilterDrawer/FilterDrawer'),
+  { ssr: false },
+)
+const CitySkillTrendView = dynamic(
+  () => import('@/shared/ui/components/organisms/CitySkillTrendView/CitySkillTrendView'),
+  { ssr: false },
+)
 
 export function JobsPageClient() {
   const {
@@ -80,29 +80,37 @@ export function JobsPageClient() {
 
   // Sync selected job with URL param ?jobId=123 (shareable links)
   const [jobId, setJobId] = useQueryState('jobId', parseAsInteger)
+
   useEffect(() => {
     let canceled = false
+
     const openFromId = async (id: number) => {
       // try find in current page first
       const found = jobs?.items.find((it) => it.id === id) ?? null
+
       if (found) {
         if (!canceled) setSelectedJob(found)
+
         return
       }
+
       try {
         const item = await fetchJobById(id)
+
         if (!canceled) setSelectedJob(item)
       } catch {
         // ignore (not found)
         if (!canceled) setSelectedJob(null)
       }
     }
+
     if (typeof jobId === 'number' && Number.isFinite(jobId) && jobId > 0) {
       void openFromId(jobId)
     } else {
       // ensure closed if param removed
       setSelectedJob((cur) => (cur ? null : cur))
     }
+
     return () => {
       canceled = true
     }
@@ -113,6 +121,7 @@ export function JobsPageClient() {
       const next = metrics.seriesSkills ?? []
       const cur = seriesSkills ?? []
       const same = next.length === cur.length && next.every((v, i) => v === cur[i])
+
       if (!same) setSeriesSkills(next)
     }
   }, [metrics, seriesCustom, seriesSkills])
@@ -122,18 +131,21 @@ export function JobsPageClient() {
     // Fire-and-forget; React Query dedupes in-flight
     void metricsQuery.refetch()
     void topSkillsQuery.refetch()
-  }, [deferredFilters, seriesCustom, seriesSkills])
+  }, [deferredFilters, seriesCustom, seriesSkills, metricsQuery, topSkillsQuery])
 
   useEffect(() => {
     if (!jobs) return
+
     const run = () => {
       const promises: Promise<unknown>[] = []
+
       if (jobs.page < jobs.pageCount) {
         const nextFilters = {
           ...(deferredFilters as Partial<JobFilters>),
           page: jobs.page + 1,
           pageSize,
         }
+
         promises.push(
           queryClient.prefetchQuery({
             queryKey: queryKeys.jobs(nextFilters),
@@ -141,12 +153,14 @@ export function JobsPageClient() {
           }),
         )
       }
+
       if (jobs.page > 1) {
         const prevFilters = {
           ...(deferredFilters as Partial<JobFilters>),
           page: jobs.page - 1,
           pageSize,
         }
+
         promises.push(
           queryClient.prefetchQuery({
             queryKey: queryKeys.jobs(prevFilters),
@@ -154,8 +168,10 @@ export function JobsPageClient() {
           }),
         )
       }
+
       void Promise.allSettled(promises)
     }
+
     // Defer prefetching to idle time to avoid competing with initial load
     type RequestIdle = (cb: () => void, opts?: { timeout?: number }) => number
     type CancelIdle = (handle: number) => void
@@ -165,8 +181,10 @@ export function JobsPageClient() {
     }
     const idle = glb.requestIdleCallback
     let handle: number | undefined
+
     if (idle) handle = idle(run, { timeout: 2000 })
     else handle = window.setTimeout(run, 1000)
+
     return () => {
       if (idle && handle) glb.cancelIdleCallback?.(handle)
       else if (handle) window.clearTimeout(handle)
@@ -211,32 +229,6 @@ export function JobsPageClient() {
     () => exportAllFiltered(filters as Partial<JobFilters>),
     [exportAllFiltered, filters],
   )
-
-  function countActiveFilters(f: Partial<JobFilters> | FiltersFormValues): number {
-    const jf = f as Partial<JobFilters>
-    let c = 0
-    const arr = (v?: unknown) => (Array.isArray(v) ? v.length : 0)
-
-    if (typeof jf.q === 'string' && jf.q.trim()) c++
-
-    c += arr(jf.skills)
-    c += arr(jf.excludeSkills)
-    c += arr(jf.excludeTitle)
-    c += arr(jf.cities)
-    c += arr(jf.regions)
-    c += arr(jf.remote)
-    c += arr(jf.experience)
-    c += arr(jf.job_slugs)
-
-    if (jf.cityMatch === 'exact') c++
-    if (jf.excludeCities) c++
-    if (jf.excludeRegions) c++
-    if (typeof jf.minTjm === 'number') c++
-    if (typeof jf.maxTjm === 'number') c++
-    if (jf.startDate) c++
-    if (jf.endDate) c++
-    return c
-  }
 
   const activeFiltersCount = useMemo(() => countActiveFilters(filters as JobFilters), [filters])
 
@@ -312,6 +304,7 @@ export function JobsPageClient() {
             const tops = metrics?.topSkills ?? []
             const isTopReset =
               next.length === tops.length && next.every((v: string, i: number) => v === tops[i])
+
             setSeriesCustom(!isTopReset)
           }}
           onToggleAuto={(auto: boolean) => {

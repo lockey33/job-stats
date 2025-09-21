@@ -6,6 +6,7 @@ export const contentType = 'image/png'
 
 export default function OpengraphImage() {
   const { width, height } = size
+
   return new ImageResponse(
     (
       <div

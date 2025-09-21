@@ -1,29 +1,16 @@
-import type { NextRequest } from 'next/server'
-
-import { getDbVersion, queryJobsDb } from '@/server/jobs/repository.prisma'
+import { withCachedApi } from '@/server/http/handler'
+import { queryJobsDb } from '@/server/jobs/repository'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const parsed = parseFiltersFromSearchParams(searchParams)
-    const { page, pageSize, ...filters } = parsed
+export const GET = withCachedApi(async (req) => {
+  const { searchParams } = new URL(req.url)
+  const parsed = parseFiltersFromSearchParams(searchParams)
+  const { page, pageSize, ...filters } = parsed
 
-    const result = await queryJobsDb(filters, { page, pageSize })
-    const version = await getDbVersion()
+  const result = await queryJobsDb(filters, { page, pageSize })
 
-    return Response.json(result, {
-      status: 200,
-      headers: {
-        'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
-        'X-Data-Version': version,
-      },
-    })
-  } catch (e: unknown) {
-    console.error('[api/jobs] error:', e)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+  return Response.json(result)
+})

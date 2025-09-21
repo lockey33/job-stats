@@ -12,10 +12,12 @@ export function useExport() {
 
   const exportCurrentPage = async (jobs: JobsResult | null | undefined) => {
     if (!jobs) return
+
     try {
       setExporting(true)
       const rows = jobs.items.map(jobItemToRow)
       const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)
+
       await downloadExcel(rows, 'Jobs', `jobs_page_${jobs.page}_${ts}.xlsx`)
     } finally {
       setExporting(false)
@@ -27,12 +29,14 @@ export function useExport() {
       setExporting(true)
       const qsCore = toQueryString(filters as Partial<JobFilters>)
       const res = await fetch(`/api/export?${qsCore}`)
+
       if (!res.ok) throw new Error(`Export failed: ${res.status}`)
       const blob = await res.blob()
       const cd = res.headers.get('Content-Disposition') || ''
       const match = /filename="?([^";]+)"?/i.exec(cd || '')
       const filename =
         match?.[1] || `jobs_all_${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)}.xlsx`
+
       downloadBlob(filename, blob.type || 'application/octet-stream', blob)
     } finally {
       setExporting(false)

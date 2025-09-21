@@ -11,6 +11,7 @@ export function useMeta() {
 
 export function useJobs(params: { page: number; pageSize: number; filters: Partial<JobFilters> }) {
   const { page, pageSize, filters } = params
+
   return useQuery({
     ...jobsQuery({ page, pageSize, filters }),
     placeholderData: keepPreviousData,

@@ -13,9 +13,11 @@ interface Props {
 export default function AppliedFiltersChips({ value, onChange, onClearAll }: Props) {
   function unset<K extends keyof JobFilters>(key: K) {
     const next = { ...value } as JobFilters & Record<string, unknown>
+
     delete next[key as string]
     onChange(next as JobFilters)
   }
+
   const items: ChipItem[] = []
 
   // q
@@ -64,6 +66,7 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
       onRemove: () => onChange({ ...value, cities: (value.cities ?? []).filter((x) => x !== c) }),
     })
   }
+
   for (const r of (value.regions ?? []) as string[]) {
     items.push({
       id: `region:${r}`,
@@ -79,6 +82,7 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
       onRemove: () => unset('cityMatch'),
     })
   }
+
   if (value.excludeCities) {
     items.push({
       id: `flag:excludeCities`,
@@ -86,6 +90,7 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
       onRemove: () => unset('excludeCities'),
     })
   }
+
   if (value.excludeRegions) {
     items.push({
       id: `flag:excludeRegions`,
@@ -102,6 +107,7 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
       onRemove: () => onChange({ ...value, remote: (value.remote ?? []).filter((x) => x !== r) }),
     })
   }
+
   for (const e of (value.experience ?? []) as string[]) {
     items.push({
       id: `exp:${e}`,
@@ -119,6 +125,7 @@ export default function AppliedFiltersChips({ value, onChange, onClearAll }: Pro
       onRemove: () => unset('minTjm'),
     })
   }
+
   if (typeof value.maxTjm === 'number') {
     items.push({
       id: `maxTjm:${value.maxTjm}`,

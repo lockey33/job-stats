@@ -1,8 +1,9 @@
 'use client'
 
 import { Box, Input } from '@chakra-ui/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside'
 import CloseableTag from '@/shared/ui/components/atoms/CloseableTag/CloseableTag'
 import SuggestionsList from '@/shared/ui/components/atoms/SuggestionsList/SuggestionsList'
 
@@ -46,44 +47,49 @@ export default function MultiSelect({
   const suggestions = useMemo(() => {
     const isSelected = (o: { raw: string; norm: string }) =>
       dedupeByNormalized ? selectedSet.has(o.norm) : selectedSet.has(o.raw)
+
     if (!inputNorm) {
       return normalizedOptions
         .filter((o) => !isSelected(o))
         .slice(0, maxSuggestions)
         .map((o) => o.raw)
     }
+
     return normalizedOptions
       .filter((o) => !isSelected(o) && o.norm.includes(inputNorm))
       .slice(0, maxSuggestions)
       .map((o) => o.raw)
   }, [normalizedOptions, selectedSet, inputNorm, maxSuggestions, dedupeByNormalized])
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current) return
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [])
+  const closeOnOutside = useCallback(() => setOpen(false), [])
 
-  function addItem(item: string) {
-    const n = normalize(item)
-    const exists = dedupeByNormalized ? selectedSet.has(n) : selectedSet.has(item)
-    if (exists) return
-    onChange([...value, item])
-    setInput('')
-    setOpen(false)
-  }
+  useOnClickOutside(containerRef, closeOnOutside)
 
-  function removeItem(item: string) {
-    if (dedupeByNormalized) {
+  const addItem = useCallback(
+    (item: string) => {
       const n = normalize(item)
-      onChange(value.filter((v) => normalize(v) !== n))
-    } else {
-      onChange(value.filter((v) => v !== item))
-    }
-  }
+      const exists = dedupeByNormalized ? selectedSet.has(n) : selectedSet.has(item)
+
+      if (exists) return
+      onChange([...value, item])
+      setInput('')
+      setOpen(false)
+    },
+    [dedupeByNormalized, normalize, onChange, selectedSet, value],
+  )
+
+  const removeItem = useCallback(
+    (item: string) => {
+      if (dedupeByNormalized) {
+        const n = normalize(item)
+
+        onChange(value.filter((v) => normalize(v) !== n))
+      } else {
+        onChange(value.filter((v) => v !== item))
+      }
+    },
+    [dedupeByNormalized, normalize, onChange, value],
+  )
 
   return (
     <Box ref={containerRef} w="full">

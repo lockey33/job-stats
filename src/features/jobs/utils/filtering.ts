@@ -8,6 +8,7 @@ import type { JobFilters, JobItem, JobsResult, MetaFacets, Pagination } from '..
 
 function stripHtml(input?: string | null): string {
   if (!input) return ''
+
   return input.replace(/<[^>]*>/g, ' ')
 }
 
@@ -32,19 +33,25 @@ function itemTjmApprox(item: JobItem): number | null {
 function dateInRange(item: JobItem, start?: string, end?: string): boolean {
   if (!item.created_at) return false
   let d: Date
+
   try {
     d = parseISO(item.created_at)
   } catch {
     return false
   }
+
   if (start) {
     const sd = parseISO(start)
+
     if (isBefore(d, sd)) return false
   }
+
   if (end) {
     const ed = parseISO(end)
+
     if (isAfter(d, ed)) return false
   }
+
   return true
 }
 
@@ -61,18 +68,25 @@ export function applyFilters(jobs: JobItem[], filters: JobFilters): JobItem[] {
 
   return jobs.filter((j) => {
     if (q && !itemText(j).includes(q)) return false
+
     if (skills.length > 0) {
       const jsSet = new Set((j.skills ?? []).map(norm))
+
       if (!skills.every((s) => jsSet.has(s))) return false
     }
+
     if (excludeSkills.length > 0) {
       const js = (j.skills ?? []).map(norm)
+
       if (excludeSkills.some((s) => js.includes(s))) return false
     }
+
     if (excludeTitle.length > 0) {
       const t = norm(j.title)
+
       if (excludeTitle.some((w) => w && t.includes(w))) return false
     }
+
     if (cities.length > 0) {
       const c = normCity(j.city)
       const mode = filters.cityMatch ?? 'contains'
@@ -81,41 +95,54 @@ export function applyFilters(jobs: JobItem[], filters: JobFilters): JobItem[] {
           ? cities.includes(c)
           : cities.some((needle) => needle && c.includes(needle))
       const exclude = !!filters.excludeCities
+
       if (!exclude) {
         if (!match) return false
       } else {
         if (match) return false
       }
     }
+
     if (regions.length > 0) {
       const reg = cityToRegion(j.city)
       const rn = norm(reg)
       const has = rn ? regions.includes(rn) : false
       const exclude = !!filters.excludeRegions
+
       if (!exclude) {
         if (!has) return false
       } else {
         if (has) return false
       }
     }
+
     if (remote.length > 0) {
       const r = norm(j.remote ?? '')
+
       if (!remote.includes(r)) return false
     }
+
     if (experience.length > 0) {
       const e = norm(j.experience ?? '')
+
       if (!experience.includes(e)) return false
     }
+
     if (job_slugs.length > 0) {
       const s = norm(j.job_slug ?? '')
+
       if (!job_slugs.includes(s)) return false
     }
+
     const tjm = itemTjmApprox(j)
+
     if (typeof filters.minTjm === 'number' && (tjm == null || tjm < filters.minTjm)) return false
     if (typeof filters.maxTjm === 'number' && (tjm == null || tjm > filters.maxTjm)) return false
+
     if (filters.startDate || filters.endDate) {
       if (!dateInRange(j, filters.startDate, filters.endDate)) return false
     }
+
     return true
   })
 }
@@ -123,15 +150,18 @@ export function applyFilters(jobs: JobItem[], filters: JobFilters): JobItem[] {
 export function dedupeById(items: JobItem[]): JobItem[] {
   const out: JobItem[] = []
   const seen = new Set<number>()
+
   for (const it of items) {
     if (typeof it.id !== 'number') {
       out.push(it)
       continue
     }
+
     if (seen.has(it.id)) continue
     seen.add(it.id)
     out.push(it)
   }
+
   return out
 }
 
@@ -140,6 +170,7 @@ export function paginate(items: JobItem[], { page, pageSize }: Pagination): Jobs
   const start = (page - 1) * pageSize
   const slice = items.slice(start, start + pageSize)
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
+
   return { items: slice, total, page, pageSize, pageCount }
 }
 
@@ -158,15 +189,17 @@ export function computeFacets(jobs: JobItem[]): MetaFacets {
   let maxDate: string | null = null
 
   for (const j of jobs) {
-    (j.skills ?? []).forEach((s) => s && skillsSet.add(s))
+    ;(j.skills ?? []).forEach((s) => s && skillsSet.add(s))
     if (j.city) citiesSet.add(j.city)
     const reg = cityToRegion(j.city)
+
     if (reg) regionsSet.add(reg)
     if (j.job_slug) jobSlugSet.add(j.job_slug)
     if (j.experience) expSet.add(j.experience)
     if (j.remote) remoteSet.add(String(j.remote))
 
     const tjm = itemTjmApprox(j)
+
     if (tjm != null) {
       minT = minT == null ? tjm : Math.min(minT, tjm)
       maxT = maxT == null ? tjm : Math.max(maxT, tjm)
@@ -174,6 +207,7 @@ export function computeFacets(jobs: JobItem[]): MetaFacets {
 
     if (j.created_at) {
       const ymd = j.created_at.slice(0, 10)
+
       if (!minDate || ymd < minDate) minDate = ymd
       if (!maxDate || ymd > maxDate) maxDate = ymd
     }

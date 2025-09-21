@@ -27,6 +27,7 @@ interface Props {
 
 export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }: Props) {
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
+
   if (!payload || !payload.trends || payload.trends.length === 0) return null
 
   const months = payload.months
@@ -37,18 +38,23 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
 
   // Build a quick lookup for rank per month per skill
   const rankMapPerSkill = new Map<string, Map<string, number>>()
+
   for (const t of trends) {
     rankMapPerSkill.set(t.skill, new Map(t.monthly.map((r) => [r.month, r.rank])))
   }
 
   // Compute the max rank seen per month (to transform rank -> ascending score)
   const maxRankPerMonth: Record<string, number> = {}
+
   for (const m of months) {
     let maxR = 1
+
     for (const t of trends) {
       const r = rankMapPerSkill.get(t.skill)?.get(m)
+
       if (typeof r === 'number' && r > maxR) maxR = r
     }
+
     maxRankPerMonth[m] = maxR
   }
 
@@ -57,6 +63,7 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
     month: m,
     monthLabel: formatMonthFR(m),
   }))
+
   trends.forEach((t) => {
     for (let i = 0; i < months.length; i++) {
       const m = months[i]!
@@ -64,6 +71,7 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
       const maxR = maxRankPerMonth[m] ?? 0
       const score = typeof r === 'number' ? maxR + 1 - r : 0
       const row = data[i]!
+
       row[t.skill] = score
     }
   })
@@ -74,17 +82,21 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
 
   function getRawMonth(pl?: TipItem[]): string | number | undefined {
     const p0 = pl && pl[0]
+
     if (p0 && typeof p0 === 'object' && p0) {
       const inner = (p0 as unknown as { payload?: Record<string, unknown> }).payload
       const m = inner?.month
+
       if (typeof m === 'string' || typeof m === 'number') return m
     }
+
     return undefined
   }
 
   function CustomTooltip({ active, payload }: { active?: boolean; payload?: TipItem[] }) {
     if (!active || !payload || payload.length === 0) return null
     const rawMonth = getRawMonth(payload)
+
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">
@@ -107,6 +119,7 @@ export default function EmergingSkillsChart({ payload, limit = 10, controlSlot }
 
   function CustomLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
     if (!payload || payload.length === 0) return null
+
     return (
       <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
         {payload.map((p, idx: number) => (

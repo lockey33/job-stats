@@ -53,29 +53,32 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
   const [error, setError] = useState<string | null>(null)
   const [months, setMonths] = useState<string[]>([])
   const [seriesCities, setSeriesCities] = useState<string[]>([])
+
   type CityChartDatum = { month: string; monthLabel: string } & Record<string, number | string>
   const [chartData, setChartData] = useState<CityChartDatum[]>([])
   const [hiddenCities, setHiddenCities] = useState<string[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
-  // Auto-fill default skill once when analytics suggested one
+  // Auto-fill default skill when provided, only if user has not selected one yet
   useEffect(() => {
     if (!skill && defaultSkill) setSkill(defaultSkill)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultSkill])
+  }, [defaultSkill, skill])
 
   const triggerFetch = useCallback(async () => {
     if (!skill) {
       setMonths([])
       setSeriesCities([])
       setChartData([])
+
       return
     }
+
     try {
       setLoading(true)
       // cancel previous request if any
       abortRef.current?.abort()
       const ctrl = new AbortController()
+
       abortRef.current = ctrl
       setError(null)
       const payload = await fetchCitySkillTrend(
@@ -88,6 +91,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
       // Transform into recharts format: [{month, monthLabel, CityA: n, CityB: m, ...}, ...]
       const cities = Object.keys(payload.citySeries)
       const map: Record<string, CityChartDatum> = {}
+
       for (const city of cities) {
         for (const pt of payload.citySeries[city] ?? []) {
           const existing = map[pt.month]
@@ -97,10 +101,13 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
               month: pt.month,
               monthLabel: formatMonthFR(pt.month),
             } as CityChartDatum)
+
           row[city] = pt.value
         }
       }
+
       const data = Object.values(map).sort((a, b) => String(a.month).localeCompare(String(b.month)))
+
       setMonths(payload.months)
       setSeriesCities(cities)
       setChartData(data)
@@ -127,9 +134,11 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
 
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {}
+
     seriesCities.forEach((city, idx) => {
       map[city] = COLORS[idx % COLORS.length]!
     })
+
     return map
   }, [seriesCities])
 
@@ -145,6 +154,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
         {seriesCities.map((city) => {
           const color = colorMap[city]
           const hidden = hiddenCities.includes(city)
+
           return (
             <Box
               as="button"
@@ -178,13 +188,17 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
   }
 
   type TooltipEntry = { name: string; value: number; color?: string }
+
   function getRawMonth(pl?: TooltipEntry[]): string | undefined {
     const p0 = pl && pl[0]
+
     if (p0 && typeof p0 === 'object') {
       const inner = (p0 as unknown as { payload?: Record<string, unknown> }).payload
       const m = inner?.month
+
       if (typeof m === 'string') return m
     }
+
     return undefined
   }
 
@@ -195,6 +209,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
     const prevIdx = idx - 1
     const prevMonth = prevIdx >= 0 ? months[prevIdx] : null
     const prev = prevMonth ? chartData.find((d) => String(d.month) === String(prevMonth)) : null
+
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">
@@ -205,6 +220,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
           const val = entry.value as number
           const prevVal = prev ? (prev[city] ?? null) : null
           const delta = typeof prevVal === 'number' ? val - prevVal : null
+
           return (
             <Box
               key={`${city}-${idx}`}
@@ -289,6 +305,7 @@ export default function CitySkillTrendView({ filters, meta, defaultSkill }: Prop
                 value={[topCityCount]}
                 onValueChange={(d) => {
                   const v = Array.isArray(d.value) ? d.value[0] : undefined
+
                   if (typeof v === 'number') setTopCityCount(v)
                 }}
                 disabled={selectedCities.length > 0}

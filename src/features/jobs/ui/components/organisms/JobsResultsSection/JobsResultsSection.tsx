@@ -66,6 +66,7 @@ export default function JobsResultsSection(props: Props) {
   } = props
 
   if (isLoading && !jobs) return <ResultsSkeleton />
+
   if (isError) {
     return (
       <Alert.Root status="error" mb="md">

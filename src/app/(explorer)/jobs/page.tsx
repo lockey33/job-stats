@@ -21,10 +21,12 @@ export default async function JobsPage(props: { searchParams?: Promise<SearchPar
     : undefined
 
   const usp = new URLSearchParams()
+
   for (const [k, v] of Object.entries(resolved ?? {})) {
     if (Array.isArray(v)) v.forEach((vi) => usp.append(k, vi))
     else if (typeof v === 'string') usp.set(k, v)
   }
+
   const parsed = parseFiltersFromSearchParams(usp)
   const { page, pageSize, ...filters } = parsed
 

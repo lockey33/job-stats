@@ -32,6 +32,7 @@ interface Props {
 export default function Charts({ metrics, months = 12, mode = 'basics', controlSlot }: Props) {
   const [hidden, setHidden] = React.useState<string[]>([])
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
+
   if (!metrics) return null
 
   const fmtMonth = (m: string | number) => formatMonthFR(m)
@@ -40,11 +41,14 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
 
   function getRawMonth(pl?: TooltipItem[]): string | number | undefined {
     const p0 = pl && pl[0]
+
     if (p0 && typeof p0 === 'object') {
       const inner = (p0 as unknown as { payload?: Record<string, unknown> }).payload
       const m = inner?.month
+
       if (typeof m === 'string' || typeof m === 'number') return m
     }
+
     return undefined
   }
 
@@ -60,6 +64,7 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
     if (!active || !payload || payload.length === 0) return null
     const val = payload[0]?.value as number | undefined
     const rawMonth = getRawMonth(payload)
+
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">
@@ -76,6 +81,7 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
   function MultiTooltip({ active, payload }: { active?: boolean; payload?: TooltipItem[] }) {
     if (!active || !payload || payload.length === 0) return null
     const rawMonth = getRawMonth(payload)
+
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">
@@ -98,11 +104,13 @@ export default function Charts({ metrics, months = 12, mode = 'basics', controlS
 
   function SimpleLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
     if (!payload || payload.length === 0) return null
+
     return (
       <Box display="flex" flexWrap="wrap" gap="sm" mt="xs">
         {payload.map((p, idx: number) => {
           const name = (p.value ?? '') as string
           const isHidden = hidden.includes(name)
+
           return (
             <Box
               as="button"

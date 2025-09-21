@@ -13,9 +13,12 @@ interface Props {
 
 export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: Props) {
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? false
+
   if (!data || data.length === 0) return null
   const chartData = data.slice(0, maxItems).map((d) => ({ name: d.skill, value: d.count }))
+
   type TipItem = { value?: number }
+
   function CustomTooltip({
     active,
     payload,
@@ -27,6 +30,7 @@ export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: 
   }) {
     if (!active || !payload || payload.length === 0) return null
     const val = payload[0]?.value as number | undefined
+
     return (
       <Box bg="white" borderWidth="1px" rounded="md" p="sm" fontSize="sm" shadow="sm">
         <Text fontWeight="semibold" mb="xs">
@@ -36,6 +40,7 @@ export default function TopSkillsBarChart({ data, maxItems = 50, controlSlot }: 
       </Box>
     )
   }
+
   return (
     <Box borderWidth="0px" p={0} bg="transparent" shadow="none">
       <Box display="flex" alignItems="center" justifyContent="space-between" gap="sm" mb="xs">

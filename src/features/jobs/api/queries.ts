@@ -31,6 +31,7 @@ export function jobsQuery(params: {
   filters: Partial<JobFilters>
 }): UseQueryOptions<JobsResult, Error> {
   const { page, pageSize, filters } = params
+
   return {
     queryKey: queryKeys.jobs({ page, pageSize, ...filters }),
     queryFn: () => fetchJobs({ ...filters, page, pageSize }),

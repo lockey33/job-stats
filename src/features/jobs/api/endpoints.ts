@@ -14,6 +14,7 @@ export async function fetchJobs(
   filters: Partial<JobFilters & { page: number; pageSize: number }>,
 ): Promise<JobsResult> {
   const query = buildQueryFromFilters(filters)
+
   return apiGet('/api/jobs', query)
 }
 
@@ -30,6 +31,7 @@ export async function fetchMetrics(
     seriesSkills: seriesSkills && seriesSkills.length > 0 ? seriesSkills.join(',') : undefined,
     topSkillsCount,
   })
+
   return apiGet('/api/metrics', query)
 }
 
@@ -39,6 +41,7 @@ export async function fetchTopSkills(
 ): Promise<TopSkill[]> {
   const query = buildQueryFromFilters(filters, { count })
   const data = await apiGet<{ topSkills: TopSkill[] }>('/api/metrics/top-skills', query)
+
   return data.topSkills
 }
 
@@ -53,6 +56,7 @@ export async function fetchEmergingSkills(
     topK,
     minTotalCount,
   })
+
   return apiGet('/api/metrics/emerging-skills', query)
 }
 
@@ -68,6 +72,7 @@ export async function fetchCitySkillTrend(
     seriesCities: seriesCities && seriesCities.length > 0 ? seriesCities.join(',') : undefined,
     topCityCount,
   })
+
   return apiGet('/api/metrics/city-skill', query, init)
 }
 

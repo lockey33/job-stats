@@ -39,24 +39,31 @@ function getComparable(it: JobItem, key: SortKey): string | number {
 function sortItems(items: JobItem[], key?: SortKey, order: 'asc' | 'desc' = 'asc'): JobItem[] {
   if (!key) return items
   const copy = [...items]
+
   copy.sort((a, b) => {
     const va = getComparable(a, key)
     const vb = getComparable(b, key)
+
     if (typeof va === 'number' && typeof vb === 'number') {
       return order === 'asc' ? va - vb : vb - va
     }
+
     const sa = String(va)
     const sb = String(vb)
     const cmp = sa.localeCompare(sb)
+
     return order === 'asc' ? cmp : -cmp
   })
+
   return copy
 }
 
 function formatDate(input?: string | null): string {
   if (!input) return '—'
   const d = new Date(input)
+
   if (isNaN(d.getTime())) return '—'
+
   try {
     return format(d, 'dd/MM/yyyy')
   } catch {
@@ -66,6 +73,7 @@ function formatDate(input?: string | null): string {
 
 function formatExperience(exp?: string | null): string {
   const v = (exp || '').toString().toLowerCase()
+
   switch (v) {
     case 'junior':
       return 'Junior'
@@ -116,8 +124,10 @@ export default function ResultsTable({
   onSelect,
 }: Props) {
   const data = useMemo(() => sortItems(items, sortKey, sortOrder), [items, sortKey, sortOrder])
+
   const ariaSort = (key: SortKey | undefined): 'ascending' | 'descending' | 'none' | 'other' => {
     if (!key || sortKey !== key) return 'none'
+
     return sortOrder === 'asc' ? 'ascending' : 'descending'
   }
 

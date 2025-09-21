@@ -4,18 +4,32 @@ function uniqTrim(xs: (string | undefined | null)[] | undefined): string[] {
   if (!xs) return []
   const out: string[] = []
   const seen = new Set<string>()
+
   for (const v of xs) {
     const s = String(v ?? '').trim()
+
     if (!s) continue
+
     if (!seen.has(s)) {
       seen.add(s)
       out.push(s)
     }
   }
+
   return out
 }
 
-export type NormalizedJobFilters = Omit<JobFilters, 'skills' | 'excludeSkills' | 'excludeTitle' | 'cities' | 'regions' | 'remote' | 'experience' | 'job_slugs'> & {
+export type NormalizedJobFilters = Omit<
+  JobFilters,
+  | 'skills'
+  | 'excludeSkills'
+  | 'excludeTitle'
+  | 'cities'
+  | 'regions'
+  | 'remote'
+  | 'experience'
+  | 'job_slugs'
+> & {
   skills: string[]
   excludeSkills: string[]
   excludeTitle: string[]
@@ -33,8 +47,10 @@ export function normalizeJobFilters(f: JobFilters | undefined): NormalizedJobFil
   const cityMatch = filters.cityMatch === 'exact' ? 'exact' : 'contains'
   const minTjm = typeof filters.minTjm === 'number' ? filters.minTjm : undefined
   const maxTjm = typeof filters.maxTjm === 'number' ? filters.maxTjm : undefined
-  const startDate = filters.startDate && String(filters.startDate).trim() ? String(filters.startDate) : undefined
-  const endDate = filters.endDate && String(filters.endDate).trim() ? String(filters.endDate) : undefined
+  const startDate =
+    filters.startDate && String(filters.startDate).trim() ? String(filters.startDate) : undefined
+  const endDate =
+    filters.endDate && String(filters.endDate).trim() ? String(filters.endDate) : undefined
 
   const out: NormalizedJobFilters = {
     q,
@@ -50,6 +66,7 @@ export function normalizeJobFilters(f: JobFilters | undefined): NormalizedJobFil
     excludeCities: Boolean(filters.excludeCities),
     excludeRegions: Boolean(filters.excludeRegions),
   }
+
   if (typeof minTjm === 'number') out.minTjm = minTjm
   if (typeof maxTjm === 'number') out.maxTjm = maxTjm
   if (startDate !== undefined) out.startDate = startDate
@@ -57,4 +74,3 @@ export function normalizeJobFilters(f: JobFilters | undefined): NormalizedJobFil
 
   return out
 }
-

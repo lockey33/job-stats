@@ -1,23 +1,25 @@
-import type { NextRequest } from 'next/server'
-
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
-import { fetchJobsDbBatch, getDbVersion } from '@/server/jobs/repository.prisma'
+import { isAuthorized } from '@/server/http/adminAuth'
+import { withApi } from '@/server/http/handler'
+import { fetchJobsDbBatch } from '@/server/jobs/repository'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
+// version header is injected by withApi when addVersion is enabled
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
-  try {
+export const GET = withApi(
+  { rateLimit: { windowMs: 60_000, max: 5, by: 'ip+path' }, addVersion: true },
+  async (req) => {
     const { searchParams } = new URL(req.url)
     const parsed = parseFiltersFromSearchParams(searchParams)
     const { page, pageSize, ...filters } = parsed
+
     void page
     void pageSize
 
     const format = (searchParams.get('format') || 'xlsx').toLowerCase()
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)
-    const version = await getDbVersion()
     const encoder = new TextEncoder()
 
     async function streamCsvDb() {
@@ -46,45 +48,58 @@ export async function GET(req: NextRequest) {
           controller.enqueue(encoder.encode(headers.join(',') + '\n'))
           const batchSize = 1000
           let skip = 0
+
           for (;;) {
             const batch = await fetchJobsDbBatch(
               filters as import('@/features/jobs/types/types').JobFilters,
               skip,
               batchSize,
             )
+
             if (batch.length === 0) break
+
             for (const it of batch) {
               const row = jobItemToRow(it)
               const line = headers
                 .map((h) => {
                   const val = row[h as keyof typeof row]
+
                   if (val == null) return ''
                   const s = String(val)
+
                   return s.includes('"') || s.includes(',') || s.includes('\n')
                     ? '"' + s.replace(/"/g, '""') + '"'
                     : s
                 })
                 .join(',')
+
               controller.enqueue(encoder.encode(line + '\n'))
             }
+
             skip += batch.length
             if (batch.length < batchSize) break
             await new Promise((r) => setTimeout(r, 0))
           }
+
           controller.close()
         },
       })
+
       return new Response(stream, {
         status: 200,
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="jobs_all_${ts}.csv"`,
-          'X-Data-Version': version,
         },
       })
     }
 
     if (format === 'csv') return streamCsvDb()
+
+    // Only allow XLSX for admin; otherwise fallback to CSV to be user-friendly
+    if (!isAuthorized(req.headers)) {
+      return streamCsvDb()
+    }
 
     const envLimit = Number.parseInt(process.env.EXPORT_XLSX_LIMIT || '', 10)
     const XLSX_LIMIT =
@@ -92,6 +107,7 @@ export async function GET(req: NextRequest) {
     const rows: import('@/shared/utils/export').Row[] = []
     const batchSize = 1000
     let skip = 0
+
     for (;;) {
       if (rows.length >= XLSX_LIMIT) break
       const batch = await fetchJobsDbBatch(
@@ -99,27 +115,27 @@ export async function GET(req: NextRequest) {
         skip,
         Math.min(batchSize, XLSX_LIMIT - rows.length),
       )
+
       if (batch.length === 0) break
       rows.push(...batch.map((it) => jobItemToRow(it)))
       skip += batch.length
       if (batch.length < batchSize) break
     }
+
     if (rows.length >= XLSX_LIMIT) return streamCsvDb()
     const XLSX = await import('xlsx')
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
+
     XLSX.utils.book_append_sheet(wb, ws, 'Jobs')
     const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
+
     return new Response(buf, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="jobs_all_${ts}.xlsx"`,
-        'X-Data-Version': version,
       },
     })
-  } catch (e: unknown) {
-    console.error('[api/export] error:', e)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+  },
+)

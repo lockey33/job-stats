@@ -22,6 +22,7 @@ export default function RemovableChipsBar({
   clearLabel = 'Tout effacer',
 }: Props) {
   if (!items || items.length === 0) return null
+
   return (
     <HStack justify="space-between" align="center" wrap="wrap" gap="sm" py="xs">
       <Box display="flex" flexWrap="wrap" gap="sm">

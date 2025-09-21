@@ -2,9 +2,10 @@ import 'server-only'
 
 import { env } from '@/env'
 
-export function isAuthorized(headers: Headers, url: string): boolean {
-  const headerSecret = headers.get('x-admin-secret') || ''
-  const key = new URL(url).searchParams.get('key') || ''
+export function isAuthorized(headers: Headers): boolean {
   if (!env.ADMIN_SECRET) return false
-  return headerSecret === env.ADMIN_SECRET || key === env.ADMIN_SECRET
+  const bearer = headers.get('authorization') || headers.get('Authorization') || ''
+  const token = bearer.toLowerCase().startsWith('bearer ') ? bearer.slice(7).trim() : ''
+
+  return token === env.ADMIN_SECRET
 }

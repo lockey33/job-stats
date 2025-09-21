@@ -1,8 +1,9 @@
 'use client'
 
 import { Box, Button, Input } from '@chakra-ui/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside'
 import SuggestionsList from '@/shared/ui/components/atoms/SuggestionsList/SuggestionsList'
 
 type Normalizer = (s: string) => string
@@ -40,30 +41,27 @@ export default function Autocomplete({
 
   const suggestions = useMemo(() => {
     if (!inputNorm) return opts.slice(0, 12).map((o) => o.raw)
+
     return opts
       .filter((o) => o.norm.includes(inputNorm))
       .slice(0, 12)
       .map((o) => o.raw)
   }, [opts, inputNorm])
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!ref.current) return
-      if (!ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [])
+  useOnClickOutside(ref, () => setOpen(false))
 
-  function pick(s: string) {
-    onChange(s)
-    setOpen(false)
-  }
+  const pick = useCallback(
+    (s: string) => {
+      onChange(s)
+      setOpen(false)
+    },
+    [onChange],
+  )
 
-  function clear() {
+  const clear = useCallback(() => {
     onChange('')
     setInput('')
-  }
+  }, [onChange])
 
   return (
     <Box ref={ref} w="full">
