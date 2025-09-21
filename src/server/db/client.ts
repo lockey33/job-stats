@@ -1,13 +1,8 @@
 import 'server-only'
 
-import type { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 import { logger } from '@/server/http/logger'
-
-declare global {
-  var __PRISMA_CLIENT__: PrismaClient | undefined
-  var __PRISMA_MW_INSTALLED__: boolean | undefined
-}
 
 /**
  * Return a singleton PrismaClient configured from DATABASE_URL.
@@ -15,17 +10,9 @@ declare global {
  * Also installs lightweight timing middleware (once) to help spot slow queries.
  */
 export async function getPrisma(): Promise<PrismaClient> {
-  if (globalThis.__PRISMA_CLIENT__) return globalThis.__PRISMA_CLIENT__
+  const globalForPrisma = globalThis as unknown as { __prisma?: PrismaClient }
 
-  const mod = await import('@prisma/client').catch((e) => {
-    throw new Error(
-      'Prisma client not available. Install @prisma/client and prisma, and run prisma generate. ' +
-        String((e as Error)?.message || e),
-    )
-  })
-
-  type PrismaModule = typeof import('@prisma/client')
-  const { PrismaClient } = mod as unknown as PrismaModule
+  if (globalForPrisma.__prisma) return globalForPrisma.__prisma
 
   const url = process.env.DATABASE_URL
 
@@ -33,8 +20,10 @@ export async function getPrisma(): Promise<PrismaClient> {
 
   const client = new PrismaClient({ datasources: { db: { url } } })
 
-  // Install timing middleware once per process
-  if (!globalThis.__PRISMA_MW_INSTALLED__) {
+  // Install timing middleware once per client (guard via instance flag)
+  const mwFlag = '__mwInstalled'
+
+  if (!(client as unknown as Record<string, unknown>)[mwFlag]) {
     const slowMs = Number(process.env.DB_SLOW_MS || '300')
 
     client.$use(async (params, next) => {
@@ -45,11 +34,9 @@ export async function getPrisma(): Promise<PrismaClient> {
         const ms = Date.now() - start
 
         if (ms >= slowMs) {
-          // Avoid logging query payloads/params to reduce noise and leakage risk
           const model = params.model || 'raw'
           const action = params.action
 
-          // Keep concise logs; let downstream observability aggregate
           logger.warn(`[prisma] slow query: ${model}.${action} took ${ms}ms`)
         }
 
@@ -59,17 +46,16 @@ export async function getPrisma(): Promise<PrismaClient> {
         const model = params.model || 'raw'
         const action = params.action
 
-        // Surface timing on errors too
-        logger.warn(
-          `[prisma] error in ${model}.${action} after ${ms}ms: ${(err as Error)?.message}`,
-        )
+        logger.warn(`{ msg: prisma error, model: ${model}, action: ${action}, ms: ${ms} }`)
         throw err
       }
     })
-    globalThis.__PRISMA_MW_INSTALLED__ = true
+    ;(client as unknown as Record<string, unknown>)[mwFlag] = true
   }
 
-  globalThis.__PRISMA_CLIENT__ = client
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.__prisma = client
+  }
 
   return client
 }

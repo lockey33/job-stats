@@ -1,5 +1,7 @@
 'use client'
 
+import { Box, Button, HStack, Input, Text } from '@chakra-ui/react'
+
 interface Props {
   page: number
   pageSize: number
@@ -9,8 +11,6 @@ interface Props {
   pageSizeOptions?: number[]
   onPageSizeChange?: (size: number) => void
 }
-
-import { Box, Button, HStack, Input, Text } from '@chakra-ui/react'
 
 export default function Pagination({
   page,

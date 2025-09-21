@@ -1,3 +1,5 @@
+// Use dynamic import to avoid bundling XLSX in all client paths
+
 export type Row = Record<string, string | number | boolean | null | undefined>
 
 function toCSVValue(val: unknown): string {

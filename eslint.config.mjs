@@ -31,6 +31,23 @@ const eslintConfig = [
       'unused-imports/no-unused-imports': 'error',
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
+      // Enforce that all import declarations appear at the top of the file
+      // (i.e., no import declarations after other statements)
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'Program > :not(ImportDeclaration, TSImportEqualsDeclaration, ExpressionStatement[directive]) ~ ImportDeclaration',
+          message: 'Import declarations must be at the top of the file (after directives).',
+        },
+        {
+          selector: 'TSImportType',
+          message:
+            "Do not use inline import('module').Type. Use 'import type { Type } from \"module\"' at the top of the file.",
+        },
+      ],
+      // If require() is ever used, enforce it to be top-level only
+      'global-require': 'error',
       // Improve readability with vertical spacing between logical blocks
       'padding-line-between-statements': [
         'warn',

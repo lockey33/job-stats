@@ -1,9 +1,10 @@
+import type { JobFilters, JobItem } from '@/features/jobs/types/types'
 import { jobItemToRow } from '@/features/jobs/utils/transformers'
 import { isAuthorized } from '@/server/http/adminAuth'
 import { withApi } from '@/server/http/handler'
 import { fetchJobsDbBatch } from '@/server/jobs/repository'
+import type { Row } from '@/shared/utils/export'
 import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
-// version header is injected by withApi when addVersion is enabled
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,7 @@ export const GET = withApi(
           description: null,
           candidate_profile: null,
           company_description: null,
-        } as import('@/features/jobs/types/types').JobItem),
+        } as JobItem),
       )
       const stream = new ReadableStream<Uint8Array>({
         async start(controller) {
@@ -50,11 +51,7 @@ export const GET = withApi(
           let skip = 0
 
           for (;;) {
-            const batch = await fetchJobsDbBatch(
-              filters as import('@/features/jobs/types/types').JobFilters,
-              skip,
-              batchSize,
-            )
+            const batch = await fetchJobsDbBatch(filters as JobFilters, skip, batchSize)
 
             if (batch.length === 0) break
 
@@ -104,17 +101,13 @@ export const GET = withApi(
     const envLimit = Number.parseInt(process.env.EXPORT_XLSX_LIMIT || '', 10)
     const XLSX_LIMIT =
       Number.isFinite(envLimit) && envLimit > 0 ? Math.max(1000, Math.min(envLimit, 250000)) : 50000
-    const rows: import('@/shared/utils/export').Row[] = []
+    const rows: Row[] = []
     const batchSize = 1000
     let skip = 0
 
     for (;;) {
       if (rows.length >= XLSX_LIMIT) break
-      const batch = await fetchJobsDbBatch(
-        filters as import('@/features/jobs/types/types').JobFilters,
-        skip,
-        Math.min(batchSize, XLSX_LIMIT - rows.length),
-      )
+      const batch = await fetchJobsDbBatch(filters as JobFilters, skip, Math.min(batchSize, XLSX_LIMIT - rows.length))
 
       if (batch.length === 0) break
       rows.push(...batch.map((it) => jobItemToRow(it)))

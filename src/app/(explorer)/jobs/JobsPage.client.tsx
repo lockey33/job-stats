@@ -20,7 +20,6 @@ import type { TrendsOptions } from '@/shared/ui/components/molecules/TrendsContr
 import JobDetailsDrawer from '@/shared/ui/components/organisms/JobDetailsDrawer/JobDetailsDrawer'
 
 import { type FiltersFormValues, useExplorerState } from './hooks/useExplorerState'
-
 const FilterDrawer = dynamic(
   () => import('@/shared/ui/components/organisms/FilterDrawer/FilterDrawer'),
   { ssr: false },

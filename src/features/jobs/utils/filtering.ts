@@ -189,7 +189,7 @@ export function computeFacets(jobs: JobItem[]): MetaFacets {
   let maxDate: string | null = null
 
   for (const j of jobs) {
-    ;(j.skills ?? []).forEach((s) => s && skillsSet.add(s))
+    (j.skills ?? []).forEach((s) => s && skillsSet.add(s))
     if (j.city) citiesSet.add(j.city)
     const reg = cityToRegion(j.city)
 
