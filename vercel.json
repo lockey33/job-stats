@@ -1,5 +1,10 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm build",
-  "crons": [{ "path": "/api/cron/daily", "schedule": "0 12 * * *" }]
+  "jobs": {
+    "daily-sync": {
+      "schedule": "0 12 * * *",
+      "command": "pnpm sync:daily"
+    }
+  }
 }
