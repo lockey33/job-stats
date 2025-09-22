@@ -5,6 +5,7 @@ import { GeistSans } from 'geist/font/sans'
 import type { Metadata, Viewport } from 'next'
 
 import { env } from '@/env'
+import NameBadge from '@/shared/ui/components/atoms/NameBadge/NameBadge'
 
 import Providers from './providers'
 
@@ -46,7 +47,13 @@ export default function RootLayout({
         <meta name="emotion-insertion-point" content="" />
       </head>
       <body className={`antialiased`} style={{ background: '#f8fafc' }}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <NameBadge
+            name="Laurent Julienne"
+            linkedinUrl={"https://www.linkedin.com/in/laurent-julienne-596b5a142/"}
+          />
+        </Providers>
       </body>
     </html>
   )
