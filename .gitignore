@@ -16,10 +16,6 @@
 /scripts
 # Admin sync API should be deployed
 !src/app/api/admin/sync/**
-src/server/jobs/sync.ts
-src/server/jobs/repository.ts
-src/server/jobs/analytics.ts
-src/server/jobs/facets.ts
 
 .env
 
