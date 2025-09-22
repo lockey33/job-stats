@@ -125,13 +125,6 @@ export function JobsPageClient() {
     }
   }, [metrics, seriesCustom, seriesSkills])
 
-  // Safety: ensure charts refetch on filter/series change even if cache key stays stable
-  useEffect(() => {
-    // Fire-and-forget; React Query dedupes in-flight
-    void metricsQuery.refetch()
-    void topSkillsQuery.refetch()
-  }, [deferredFilters, seriesCustom, seriesSkills, metricsQuery, topSkillsQuery])
-
   useEffect(() => {
     if (!jobs) return
 
