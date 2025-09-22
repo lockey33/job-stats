@@ -12,6 +12,7 @@ import { parseFiltersFromSearchParams } from '@/shared/utils/searchParams'
 import { JobsPageClient } from './JobsPage.client'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 type SearchParams = Record<string, string | string[] | undefined>
 
