@@ -129,8 +129,6 @@ export default function JobsResultsSection(props: Props) {
         top="0"
         zIndex={5}
         bg="surface"
-        borderBottomWidth="1px"
-        borderColor="border"
         py="xs"
       >
         <ResultsToolbar
