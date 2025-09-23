@@ -4,102 +4,99 @@ import { PrismaClient } from '@prisma/client'
 
 import { logger } from '@/server/http/logger'
 
-/**
- * Return a singleton PrismaClient configured from DATABASE_URL.
- * Caches the client on globalThis to survive Next.js HMR in dev.
- * Also installs lightweight timing middleware (once) to help spot slow queries.
- */
-export async function getPrisma(): Promise<PrismaClient> {
-  const globalForPrisma = globalThis as unknown as { __prisma?: PrismaClient }
+// Config
+const SLOW_MS = Number(process.env.DB_SLOW_MS || '300')
+const LOG_OPTS =
+  process.env.NODE_ENV !== 'production'
+    ? [
+        { emit: 'event', level: 'query' } as const,
+        { emit: 'event', level: 'warn' } as const,
+        { emit: 'event', level: 'error' } as const,
+      ]
+    : [{ emit: 'event', level: 'error' } as const]
 
-  if (globalForPrisma.__prisma) return globalForPrisma.__prisma
+// Cache de Promise pour éviter les races + HMR Next
+let prismaPromise: Promise<PrismaClient> | undefined
 
-  const url = process.env.DATABASE_URL
+export function getPrisma(): Promise<PrismaClient> {
+  if (prismaPromise) return prismaPromise
 
-  if (!url) throw new Error('DATABASE_URL is not set')
+  const g = globalThis as unknown as { __prismaPromise?: Promise<PrismaClient> }
 
-  const client = new PrismaClient({ datasources: { db: { url } } })
+  if (process.env.NODE_ENV !== 'production' && g.__prismaPromise) return g.__prismaPromise
 
-  // Install timing middleware once per client (guard via instance flag)
-  const mwFlag = '__mwInstalled'
+  prismaPromise = (async () => {
+    const url = process.env.DATABASE_URL
 
-  if (!(client as unknown as Record<string, unknown>)[mwFlag]) {
-    const slowMs = Number(process.env.DB_SLOW_MS || '300')
+    if (!url) throw new Error('DATABASE_URL is not set')
 
-    client.$use(async (params, next) => {
-      const start = Date.now()
+    const client = new PrismaClient({ datasources: { db: { url } }, log: LOG_OPTS })
 
-      try {
-        const result = await next(params)
-        const ms = Date.now() - start
+    // Slow-query + erreurs via events (pas de middleware déprécié)
+    client.$on('query', (e) => {
+      if (typeof e.duration === 'number' && e.duration >= SLOW_MS) {
+        const model = e.target ?? 'raw'
 
-        if (ms >= slowMs) {
-          const model = params.model || 'raw'
-          const action = params.action
-
-          logger.warn(`[prisma] slow query: ${model}.${action} took ${ms}ms`)
-        }
-
-        return result
-      } catch (err) {
-        const ms = Date.now() - start
-        const model = params.model || 'raw'
-        const action = params.action
-
-        logger.warn(`{ msg: prisma error, model: ${model}, action: ${action}, ms: ${ms} }`)
-        throw err
+        // e.query contient la requête, garder court pour éviter le bruit
+        logger.warn(`[prisma] slow query ${model} ${e.duration}ms`)
       }
     })
-    ;(client as unknown as Record<string, unknown>)[mwFlag] = true
-  }
+    client.$on('warn', (e) => {
+      logger.warn(`[prisma] warn ${e.message}`)
+    })
+    client.$on('error', (e) => {
+      logger.warn(`[prisma] error ${e.message}`)
+    })
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.__prisma = client
-  }
+    await client.$connect()
 
-  return client
+    return client
+  })()
+
+  if (process.env.NODE_ENV !== 'production') g.__prismaPromise = prismaPromise
+
+  return prismaPromise
 }
 
-/** Detect if the configured datasource targets Postgres */
-// PostgreSQL is the only supported DB in all environments.
-
-/** Heuristic to detect schema-not-ready errors in dev (missing tables/columns, etc.) */
+// Erreurs de schéma manquant
 export function isSchemaMissingError(e: unknown): boolean {
   const any = e as { code?: string; message?: string }
-  const code = any?.code || ''
-  const msg = any?.message || ''
+  const code = any?.code ?? ''
+  const msg = any?.message ?? ''
 
-  // Prisma codes: P2021 (table not found), P2022 (column), P2010 (raw query failed)
   if (code === 'P2021' || code === 'P2022' || code === 'P2010') return true
   if (/no such table/i.test(msg)) return true
   if (/relation .* does not exist/i.test(msg)) return true
+  if (/column .* does not exist/i.test(msg)) return true
   if (/DATABASE_URL is not set/i.test(msg)) return true
 
   return false
 }
 
-/**
- * Wrap a DB operation with a guard that returns a safe fallback when the schema
- * is missing in non-production environments. This centralizes the pattern used
- * across repositories today.
- */
+// Erreurs de connectivité
+export function isConnectivityError(e: unknown): boolean {
+  const code = (e as { code?: string })?.code ?? ''
+
+  return code === 'P1001' || code === 'P1002' || code === 'P1008'
+}
+
+// Garde DB avec fallback en non-prod si schéma manquant
 export async function dbGuard<T>(
   op: (prisma: PrismaClient) => Promise<T>,
-  fallback: T,
+  fallback: T
 ): Promise<T> {
-  let prisma: PrismaClient
-
   try {
-    prisma = await getPrisma()
-  } catch (e) {
-    if (process.env.NODE_ENV !== 'production' && isSchemaMissingError(e)) return fallback
-    throw e
-  }
+    const prisma = await getPrisma()
 
-  try {
     return await op(prisma)
   } catch (e) {
     if (process.env.NODE_ENV !== 'production' && isSchemaMissingError(e)) return fallback
     throw e
   }
 }
+
+/*
+Notes:
+- Runtime Node.js uniquement (Pas Edge).
+- En serverless, utiliser Prisma Accelerate ou PgBouncer pour limiter les connexions.
+*/

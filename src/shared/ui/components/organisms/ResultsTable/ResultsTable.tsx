@@ -133,21 +133,12 @@ export default function ResultsTable({
 
   return (
     <Box w="full">
-      <Box
-        overflowX="auto"
-        rounded="lg"
-        borderWidth="0px"
-        bg="transparent"
-        shadow="none"
-        borderTopWidth="1px"
-        borderColor="neutral.200"
-      >
-        <Table.Root size="sm" tableLayout="fixed">
-          <Table.Header bg="neutral.50" position="sticky" top={0} zIndex={1}>
-            <Table.Row>
-              <Table.ColumnHeader aria-sort={ariaSort('title')} w="34%">
-                <SortHeader
-                  label="Titre"
+      <Table.Root size="sm" tableLayout="fixed">
+        <Table.Header bg="neutral.50" position="sticky" top={0} zIndex={1}>
+          <Table.Row>
+            <Table.ColumnHeader aria-sort={ariaSort('title')} w="34%">
+              <SortHeader
+                label="Titre"
                   active={sortKey === 'title'}
                   order={sortOrder}
                   onClick={() =>
@@ -333,7 +324,6 @@ export default function ResultsTable({
             ))}
           </Table.Body>
         </Table.Root>
-      </Box>
     </Box>
   )
 }
