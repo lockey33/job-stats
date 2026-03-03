@@ -51,7 +51,6 @@ export default function RootLayout({
           {children}
           <NameBadge
             name="lockey33"
-            linkedinUrl={"https://www.linkedin.com/in/lockey33/"}
           />
         </Providers>
       </body>
